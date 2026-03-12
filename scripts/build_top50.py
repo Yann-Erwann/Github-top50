@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from pathlib import Path
 
@@ -6,11 +7,57 @@ README_PATH = Path("README.md")
 START = "<!-- TOP50:START -->"
 END = "<!-- TOP50:END -->"
 
-# Vous pouvez filtrer différemment ici :
-# q = "stars:>1"
-# ou par langage : "language:typescript stars:>1000"
-QUERY = "stars:>1"
+GLOBAL_QUERY = "stars:>1"
 PER_PAGE = 50
+CATEGORY_PER_PAGE = 10
+
+CATEGORIES = [
+    {
+        "title": "🔒 Security & DevSecOps",
+        "tag": "SECURITY",
+        "query": "topic:security topic:devsecops stars:>500",
+    },
+    {
+        "title": "☁️ Infrastructure & Cloud",
+        "tag": "INFRA",
+        "query": "topic:infrastructure-as-code stars:>500",
+    },
+    {
+        "title": "⚛️ Frontend Frameworks",
+        "tag": "FRONTEND",
+        "query": "topic:react OR topic:angular OR topic:vue stars:>1000",
+    },
+    {
+        "title": "☕ Java Ecosystem",
+        "tag": "JAVA",
+        "query": "language:java topic:java stars:>1000",
+    },
+    {
+        "title": "🤖 AI & Machine Learning",
+        "tag": "AI",
+        "query": "topic:machine-learning OR topic:mlops stars:>1000",
+    },
+    {
+        "title": "📊 Observability & SRE",
+        "tag": "OBS",
+        "query": "topic:observability OR topic:monitoring OR topic:site-reliability-engineering stars:>500",
+    },
+    {
+        "title": "🔌 API Design & Contracts",
+        "tag": "API",
+        "query": "topic:openapi OR topic:graphql OR topic:asyncapi stars:>500",
+    },
+    {
+        "title": "🛠️ Developer Tools & CLI",
+        "tag": "DEVTOOLS",
+        "query": "topic:cli OR topic:terminal stars:>5000",
+    },
+    {
+        "title": "🗄️ Databases",
+        "tag": "DB",
+        "query": "topic:database OR topic:vector-database stars:>2000",
+    },
+]
 
 token = os.getenv("GITHUB_TOKEN")
 
@@ -20,33 +67,66 @@ headers = {
 if token:
     headers["Authorization"] = f"Bearer {token}"
 
-url = "https://api.github.com/search/repositories"
-params = {
-    "q": QUERY,
-    "sort": "stars",
-    "order": "desc",
-    "per_page": PER_PAGE,
-    "page": 1,
-}
+API_URL = "https://api.github.com/search/repositories"
 
-resp = requests.get(url, headers=headers, params=params, timeout=30)
-resp.raise_for_status()
-items = resp.json().get("items", [])
 
-lines = []
-lines.append("| Rang | Repository | Description | Stars | Langage |")
-lines.append("|---:|---|---|---:|---|")
+def search_repos(query, per_page):
+    """Search GitHub repos and return items list."""
+    params = {
+        "q": query,
+        "sort": "stars",
+        "order": "desc",
+        "per_page": per_page,
+        "page": 1,
+    }
+    resp = requests.get(API_URL, headers=headers, params=params, timeout=30)
+    if resp.status_code == 403:
+        print(f"Rate limited, waiting 60s...")
+        time.sleep(60)
+        resp = requests.get(API_URL, headers=headers, params=params, timeout=30)
+    resp.raise_for_status()
+    return resp.json().get("items", [])
 
-for idx, repo in enumerate(items, start=1):
-    name = repo["full_name"]
-    html_url = repo["html_url"]
-    stars = repo["stargazers_count"]
-    language = repo["language"] or "-"
-    description = (repo.get("description") or "-").replace("|", "\\|")
-    lines.append(f"| {idx} | [{name}]({html_url}) | {description} | {stars:,} | {language} |")
 
-generated = "\n".join(lines)
+def build_table(items, start=1):
+    """Build a markdown table from repo items."""
+    lines = []
+    lines.append("| # | Repository | Description | ⭐ Stars | Langage |")
+    lines.append("|---:|---|---|---:|---|")
+    for idx, repo in enumerate(items, start=start):
+        name = repo["full_name"]
+        html_url = repo["html_url"]
+        stars = repo["stargazers_count"]
+        language = repo["language"] or "-"
+        desc = (repo.get("description") or "-").replace("|", "\\|")
+        if len(desc) > 100:
+            desc = desc[:97] + "..."
+        lines.append(
+            f"| {idx} | [{name}]({html_url}) | {desc} | {stars:,} | {language} |"
+        )
+    return "\n".join(lines)
 
+
+# --- Build global top 50 ---
+print("Fetching global top 50...")
+global_items = search_repos(GLOBAL_QUERY, PER_PAGE)
+global_table = build_table(global_items)
+
+# --- Build category tables ---
+category_sections = []
+for cat in CATEGORIES:
+    tag_start = f"<!-- {cat['tag']}:START -->"
+    tag_end = f"<!-- {cat['tag']}:END -->"
+    print(f"Fetching {cat['title']}...")
+    items = search_repos(cat["query"], CATEGORY_PER_PAGE)
+    table = build_table(items)
+    section = f"### {cat['title']}\n\n{tag_start}\n{table}\n{tag_end}"
+    category_sections.append(section)
+    time.sleep(2)  # avoid rate limiting
+
+categories_block = "\n\n".join(category_sections)
+
+# --- Assemble and write ---
 content = README_PATH.read_text(encoding="utf-8")
 
 if START not in content or END not in content:
@@ -54,6 +134,8 @@ if START not in content or END not in content:
 
 before = content.split(START)[0]
 after = content.split(END)[1]
+
+generated = f"{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
 
 new_content = f"{before}{START}\n{generated}\n{END}{after}"
 README_PATH.write_text(new_content, encoding="utf-8")
