@@ -1,8 +1,17 @@
-# Yann-Erwann Le Calvez
+# 👋 Yann-Erwann Le Calvez
 
-Bienvenue sur mon profil.
+> Software Engineer · Rennes, France · Membre GitHub depuis 2013
 
-## Top 50 GitHub Stars
+[![GitHub followers](https://img.shields.io/github/followers/Yann-Erwann?style=social)](https://github.com/Yann-Erwann)
+[![Update README](https://github.com/Yann-Erwann/Github-top50/actions/workflows/update-readme.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/update-readme.yml)
+[![Lint](https://github.com/Yann-Erwann/Github-top50/actions/workflows/lint.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/lint.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+---
+
+## 🏆 Top 50 GitHub Stars
+
+Les 50 dépôts les plus populaires sur GitHub, mis à jour quotidiennement.
 
 <!-- TOP50:START -->
 #### 📑 Sommaire
@@ -493,5 +502,6 @@ Bienvenue sur mon profil.
 <!-- K8S:END -->
 <!-- TOP50:END -->
 
-## Autres infos
-...
+---
+
+*Dernière mise à jour automatique via [GitHub Actions](.github/workflows/update-readme.yml) · [Contribuer](CONTRIBUTING.md) · [Licence MIT](LICENSE)*
