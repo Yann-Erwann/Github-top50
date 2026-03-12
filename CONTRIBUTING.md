@@ -12,10 +12,15 @@ Thank you for your interest in contributing to this project!
 3. **Make your changes** following the conventions below
 4. **Test locally** before pushing:
    ```bash
-   pip install -r requirements.txt
-   python scripts/build_top50.py
+   make install-dev
+   make lint
+   make test
    ```
-5. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
+5. **Run the generator** when you change the README generation flow:
+   ```bash
+   make run
+   ```
+6. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
    ```
    feat(scope): add new feature
    fix(scope): fix a bug
@@ -23,11 +28,12 @@ Thank you for your interest in contributing to this project!
    ci(scope): change CI configuration
    chore(scope): maintenance task
    ```
-6. **Open a Pull Request** against `main`
+7. **Open a Pull Request** against `main`
 
 ## Code Standards
 
 - Python 3.12+
+- Source code lives under `src/github_top50/`
 - Format with [Ruff](https://docs.astral.sh/ruff/)
 - Type hints encouraged
 - Keep scripts simple and readable
