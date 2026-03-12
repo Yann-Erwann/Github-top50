@@ -23,6 +23,11 @@ CATEGORIES = [
         "query": "topic:nestjs stars:>500",
     },
     {
+        "title": "🐍 Backend — Python",
+        "tag": "PYTHON",
+        "query": "language:python topic:python stars:>5000",
+    },
+    {
         "title": "⚛️ Frontend — React & Next.js",
         "tag": "REACT",
         "query": "topic:react stars:>5000",
