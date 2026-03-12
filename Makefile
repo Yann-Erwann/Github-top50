@@ -14,7 +14,7 @@ format:
 	python -m uv run --frozen --extra dev ruff format src scripts tests
 
 test:
-	python -m uv run --frozen --extra dev pytest tests/ -v
+	python -m uv run --frozen --extra dev pytest -v
 
 audit:
 	python -m uv run --frozen --extra dev pip-audit
