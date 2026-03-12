@@ -1,8 +1,6 @@
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from scripts.build_top50 import (
     build_table,
     build_toc,
@@ -10,7 +8,6 @@ from scripts.build_top50 import (
     slugify,
     update_readme,
 )
-
 
 # ── slugify ──────────────────────────────────────────────────────────
 
@@ -176,7 +173,12 @@ class TestUpdateReadme:
             encoding="utf-8",
         )
 
-        update_readme(readme, "<!-- TOP50:START -->", "<!-- TOP50:END -->", "new content")
+        update_readme(
+            readme,
+            "<!-- TOP50:START -->",
+            "<!-- TOP50:END -->",
+            "new content",
+        )
 
         result = readme.read_text(encoding="utf-8")
         assert "new content" in result

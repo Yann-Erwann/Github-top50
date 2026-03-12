@@ -1,9 +1,9 @@
 """Integration tests — validate interactions between multiple components."""
 
 import re
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from scripts.build_top50 import (
     CATEGORIES,
     END,
@@ -50,11 +50,7 @@ class TestFullPipeline:
         """Create a minimal README with TOP50 markers."""
         readme = tmp_path / "README.md"
         readme.write_text(
-            "# My Top Stars\n\n"
-            f"{START}\n"
-            "placeholder\n"
-            f"{END}\n\n"
-            "Footer\n",
+            f"# My Top Stars\n\n{START}\nplaceholder\n{END}\n\nFooter\n",
             encoding="utf-8",
         )
         return readme
@@ -85,8 +81,7 @@ class TestFullPipeline:
         categories_block = "\n\n".join(category_sections)
         toc = build_toc(test_categories)
         generated = (
-            f"{toc}\n\n{global_table}\n\n"
-            f"## 📂 Top par catégorie\n\n{categories_block}"
+            f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
         )
         update_readme(readme, START, END, generated)
 
@@ -229,11 +224,8 @@ class TestSearchAndBuild:
         mock_resp.raise_for_status.side_effect = HTTPError("500 Server Error")
         mock_get.return_value = mock_resp
 
-        try:
+        with pytest.raises(HTTPError):
             search_repos("stars:>1", 10)
-            assert False, "Should have raised HTTPError"
-        except HTTPError:
-            pass
 
     @patch("scripts.build_top50.requests.get", side_effect=_mock_api_response)
     def test_toc_links_match_category_headings(self, mock_get):

@@ -1,253 +1,51 @@
-import os
-import time
-import requests
+"""Compatibility wrapper around the packaged GitHub Top 50 implementation."""
+
+from __future__ import annotations
+
+import sys
 from pathlib import Path
 
-import re
+SRC_PATH = Path(__file__).resolve().parents[1] / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
 
+from github_top50 import (  # noqa: E402
+    CATEGORIES,
+    CATEGORY_PER_PAGE,
+    END,
+    GLOBAL_QUERY,
+    PER_PAGE,
+    README_PATH,
+    START,
+    build_table,
+    build_toc,
+    main,
+    search_repos,
+    slugify,
+    update_readme,
+)
+from github_top50.services import github_client as _github_client  # noqa: E402
 
-def slugify(title):
-    """Convert a markdown heading to a GitHub-compatible anchor."""
-    # Remove emoji and special chars, lowercase, replace spaces with hyphens
-    slug = re.sub(r"[^\w\s-]", "", title).strip().lower()
-    slug = re.sub(r"[\s]+", "-", slug)
-    return slug
+requests = _github_client.requests
+time = _github_client.time
 
-
-README_PATH = Path("README.md")
-START = "<!-- TOP50:START -->"
-END = "<!-- TOP50:END -->"
-
-GLOBAL_QUERY = "stars:>1"
-PER_PAGE = 50
-CATEGORY_PER_PAGE = 10
-
-CATEGORIES = [
-    {
-        "title": "☕ Backend — Java & Spring Boot",
-        "tag": "JAVA",
-        "query": "language:java topic:spring-boot stars:>1000",
-    },
-    {
-        "title": "🟢 Backend — NestJS & Node.js",
-        "tag": "NESTJS",
-        "query": "topic:nestjs stars:>500",
-    },
-    {
-        "title": "🐍 Backend — Python",
-        "tag": "PYTHON",
-        "query": "language:python topic:python stars:>5000",
-    },
-    {
-        "title": "⚛️ Frontend — React & Next.js",
-        "tag": "REACT",
-        "query": "topic:react stars:>5000",
-    },
-    {
-        "title": "🅰️ Frontend - Angular",
-        "tag": "ANGULAR",
-        "query": "topic:angular stars:>1000",
-    },
-    {
-        "title": "🎨 Frontend — UI & Design Systems",
-        "tag": "UIDESIGN",
-        "query": "topic:design-system stars:>500",
-    },
-    {
-        "title": "🔌 API & Contracts",
-        "tag": "API",
-        "query": "topic:openapi stars:>500",
-    },
-    {
-        "title": "🏗️ Architecture-DDD/Event Storming",
-        "tag": "DDD",
-        "query": "topic:domain-driven-design stars:>200",
-    },
-    {
-        "title": "🧪 Architecture — TDD & Tests",
-        "tag": "TDD",
-        "query": "topic:testing-framework stars:>1000",
-    },
-    {
-        "title": "📐 Architecture-Agile Engineering",
-        "tag": "AGILE",
-        "query": "topic:architecture stars:>1000",
-    },
-    {
-        "title": "📊 Quality & Observability",
-        "tag": "OBS",
-        "query": "topic:observability stars:>500",
-    },
-    {
-        "title": "☁️ DevOps & Infrastructure",
-        "tag": "DEVOPS",
-        "query": "topic:devops stars:>5000",
-    },
-    {
-        "title": "🌐 Cloud & Platform Engineering",
-        "tag": "CLOUD",
-        "query": "topic:cloud-native stars:>1000",
-    },
-    {
-        "title": "🤖 MLOps & Data Engineering",
-        "tag": "MLOPS",
-        "query": "topic:mlops stars:>1000",
-    },
-    {
-        "title": "🗄️ Data & Databases",
-        "tag": "DB",
-        "query": "topic:database stars:>5000",
-    },
-    {
-        "title": "🛠️ Dev Tools & Productivity",
-        "tag": "DEVTOOLS",
-        "query": "topic:cli stars:>5000",
-    },
-    {
-        "title": "🔧 Toolchain — Build & DX",
-        "tag": "TOOLCHAIN",
-        "query": "topic:build-tool stars:>1000",
-    },
-    {
-        "title": "📚 Tech Radar & References",
-        "tag": "TECHRADAR",
-        "query": "topic:awesome-list stars:>10000",
-    },
-    {
-        "title": "📖 Documentation & ADR",
-        "tag": "DOCS",
-        "query": "topic:documentation stars:>5000",
-    },
-    {
-        "title": "⚖️ IA Ethics & Responsible AI",
-        "tag": "ETHICSAI",
-        "query": "topic:fairness-ai stars:>200",
-    },
-    {
-        "title": "🛡️ Governance & Compliance",
-        "tag": "GOVERNANCE",
-        "query": "topic:compliance stars:>500",
-    },
-    {
-        "title": "🔒 Security & DevSecOps",
-        "tag": "SECURITY",
-        "query": "topic:devsecops stars:>500",
-    },
-    {
-        "title": "🧠 GenAI & LLM",
-        "tag": "GENAI",
-        "query": "topic:llm stars:>1000",
-    },
-    {
-        "title": "🐳 Kubernetes & Containers",
-        "tag": "K8S",
-        "query": "topic:kubernetes stars:>5000",
-    },
+__all__ = [
+    "CATEGORIES",
+    "CATEGORY_PER_PAGE",
+    "END",
+    "GLOBAL_QUERY",
+    "PER_PAGE",
+    "README_PATH",
+    "START",
+    "build_table",
+    "build_toc",
+    "main",
+    "requests",
+    "search_repos",
+    "slugify",
+    "time",
+    "update_readme",
 ]
-
-token = os.getenv("GITHUB_TOKEN")
-
-headers = {
-    "Accept": "application/vnd.github+json",
-}
-if token:
-    headers["Authorization"] = f"Bearer {token}"
-
-API_URL = "https://api.github.com/search/repositories"
-
-
-def search_repos(query, per_page):
-    """Search GitHub repos and return items list."""
-    params = {
-        "q": query,
-        "sort": "stars",
-        "order": "desc",
-        "per_page": per_page,
-        "page": 1,
-    }
-    resp = requests.get(API_URL, headers=headers, params=params, timeout=30)
-    if resp.status_code == 403:
-        print(f"Rate limited, waiting 60s...")
-        time.sleep(60)
-        resp = requests.get(API_URL, headers=headers, params=params, timeout=30)
-    resp.raise_for_status()
-    return resp.json().get("items", [])
-
-
-def build_table(items, start=1):
-    """Build a markdown table from repo items."""
-    lines = []
-    lines.append("| # | Repository | Description | ⭐ Stars | Langage |")
-    lines.append("|---:|---|---|---:|---|")
-    for idx, repo in enumerate(items, start=start):
-        name = repo["full_name"]
-        html_url = repo["html_url"]
-        stars = repo["stargazers_count"]
-        language = repo["language"] or "-"
-        desc = (repo.get("description") or "-").replace("|", "\\|")
-        if len(desc) > 100:
-            desc = desc[:97] + "..."
-        lines.append(
-            f"| {idx} | [{name}]({html_url}) | {desc} | {stars:,} | {language} |"
-        )
-    return "\n".join(lines)
-
-
-def build_toc(categories):
-    """Build a table of contents from categories."""
-    toc_lines = ["#### 📑 Sommaire\n"]
-    toc_lines.append("- [🏆 Top 50 GitHub Stars](#-top-50-github-stars)")
-    toc_lines.append("- [📂 Top par catégorie](#-top-par-catégorie)")
-    for cat in categories:
-        anchor = slugify(cat["title"])
-        toc_lines.append(f"  - [{cat['title']}](#{anchor})")
-    return "\n".join(toc_lines)
-
-
-def update_readme(readme_path, start_marker, end_marker, generated_content):
-    """Replace content between markers in the README."""
-    content = readme_path.read_text(encoding="utf-8")
-
-    if start_marker not in content or end_marker not in content:
-        raise RuntimeError("Balises TOP50 introuvables dans README.md")
-
-    before = content.split(start_marker)[0]
-    after = content.split(end_marker)[1]
-
-    new_content = f"{before}{start_marker}\n{generated_content}\n{end_marker}{after}"
-    readme_path.write_text(new_content, encoding="utf-8")
-
-
-def main():
-    # --- Build global top 50 ---
-    print("Fetching global top 50...")
-    global_items = search_repos(GLOBAL_QUERY, PER_PAGE)
-    global_table = build_table(global_items)
-
-    # --- Build category tables ---
-    category_sections = []
-    for cat in CATEGORIES:
-        tag_start = f"<!-- {cat['tag']}:START -->"
-        tag_end = f"<!-- {cat['tag']}:END -->"
-        print(f"Fetching {cat['title']}...")
-        items = search_repos(cat["query"], CATEGORY_PER_PAGE)
-        table = build_table(items)
-        section = f"### {cat['title']}\n\n{tag_start}\n{table}\n{tag_end}"
-        category_sections.append(section)
-        time.sleep(2)  # avoid rate limiting
-
-    categories_block = "\n\n".join(category_sections)
-
-    # --- Build table of contents ---
-    toc = build_toc(CATEGORIES)
-
-    # --- Assemble and write ---
-    generated = (
-        f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
-    )
-    update_readme(README_PATH, START, END, generated)
-
-    print("README.md mis à jour.")
 
 
 if __name__ == "__main__":
