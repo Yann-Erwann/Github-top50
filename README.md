@@ -4,7 +4,8 @@
 
 [![GitHub followers](https://img.shields.io/github/followers/Yann-Erwann?style=social)](https://github.com/Yann-Erwann)
 [![Update README](https://github.com/Yann-Erwann/Github-top50/actions/workflows/update-readme.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/update-readme.yml)
-[![Lint](https://github.com/Yann-Erwann/Github-top50/actions/workflows/lint.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/lint.yml)
+[![CI](https://github.com/Yann-Erwann/Github-top50/actions/workflows/ci.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/ci.yml)
+[![Security](https://github.com/Yann-Erwann/Github-top50/actions/workflows/security.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---

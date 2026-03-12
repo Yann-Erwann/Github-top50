@@ -20,7 +20,12 @@ Thank you for your interest in contributing to this project!
    ```bash
    make run
    ```
-6. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
+6. **Run security checks** when dependencies, workflows, or API access change:
+   ```bash
+   make audit
+   make security
+   ```
+7. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
    ```
    feat(scope): add new feature
    fix(scope): fix a bug
@@ -28,7 +33,7 @@ Thank you for your interest in contributing to this project!
    ci(scope): change CI configuration
    chore(scope): maintenance task
    ```
-7. **Open a Pull Request** against `main`
+8. **Open a Pull Request** against `main`
 
 ## Code Standards
 

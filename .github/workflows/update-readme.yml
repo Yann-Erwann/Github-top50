@@ -4,6 +4,13 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 6 * * *"
+  push:
+    paths:
+      - ".github/workflows/update-readme.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "scripts/**"
+      - "src/**"
 
 permissions:
   contents: write
@@ -14,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -22,17 +29,20 @@ jobs:
         run: git pull --rebase origin main
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install uv
+        run: python -m pip install uv
+
+      - name: Sync runtime dependencies
+        run: python -m uv sync --frozen
 
       - name: Generate README section
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/build_top50.py
+        run: python -m uv run --frozen python scripts/build_top50.py
 
       - name: Commit and push if changed
         run: |

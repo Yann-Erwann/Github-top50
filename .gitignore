@@ -27,3 +27,11 @@ Thumbs.db
 # mypy / ruff
 .mypy_cache/
 .ruff_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Local tooling caches
+.pip-audit-cache/
+.uv-cache/
