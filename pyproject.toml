@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "github-top50"
+version = "0.1.0"
+description = "Generate curated GitHub Top 50 sections inside a README."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+  { name = "Yann-Erwann Le Calvez" }
+]
+dependencies = [
+  "requests==2.32.3"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.4",
+  "ruff>=0.11,<0.12"
+]
+
+[project.scripts]
+github-top50 = "github_top50.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
