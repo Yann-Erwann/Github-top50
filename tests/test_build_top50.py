@@ -20,13 +20,13 @@ class TestSlugify:
         assert slugify("Hello World") == "hello-world"
 
     def test_with_emoji(self):
-        assert slugify("☕ Backend — Java & Spring Boot") == "backend--java--spring-boot"
+        assert slugify("☕ Backend — Java & Spring Boot") == "backend-java-spring-boot"
 
     def test_already_lowercase(self):
         assert slugify("devops") == "devops"
 
     def test_special_characters(self):
-        assert slugify("API & Contracts") == "api--contracts"
+        assert slugify("API & Contracts") == "api-contracts"
 
     def test_multiple_spaces(self):
         assert slugify("a   b   c") == "a-b-c"
