@@ -193,46 +193,62 @@ def build_table(items, start=1):
     return "\n".join(lines)
 
 
-# --- Build global top 50 ---
-print("Fetching global top 50...")
-global_items = search_repos(GLOBAL_QUERY, PER_PAGE)
-global_table = build_table(global_items)
+def build_toc(categories):
+    """Build a table of contents from categories."""
+    toc_lines = ["#### 📑 Sommaire\n"]
+    toc_lines.append("- [🏆 Top 50 GitHub Stars](#-top-50-github-stars)")
+    toc_lines.append("- [📂 Top par catégorie](#-top-par-catégorie)")
+    for cat in categories:
+        anchor = slugify(cat["title"])
+        toc_lines.append(f"  - [{cat['title']}](#{anchor})")
+    return "\n".join(toc_lines)
 
-# --- Build category tables ---
-category_sections = []
-for cat in CATEGORIES:
-    tag_start = f"<!-- {cat['tag']}:START -->"
-    tag_end = f"<!-- {cat['tag']}:END -->"
-    print(f"Fetching {cat['title']}...")
-    items = search_repos(cat["query"], CATEGORY_PER_PAGE)
-    table = build_table(items)
-    section = f"### {cat['title']}\n\n{tag_start}\n{table}\n{tag_end}"
-    category_sections.append(section)
-    time.sleep(2)  # avoid rate limiting
 
-categories_block = "\n\n".join(category_sections)
+def update_readme(readme_path, start_marker, end_marker, generated_content):
+    """Replace content between markers in the README."""
+    content = readme_path.read_text(encoding="utf-8")
 
-# --- Build table of contents ---
-toc_lines = ["#### 📑 Sommaire\n"]
-toc_lines.append(f"- [🏆 Top 50 GitHub Stars](#-top-50-github-stars)")
-toc_lines.append(f"- [📂 Top par catégorie](#-top-par-catégorie)")
-for cat in CATEGORIES:
-    anchor = slugify(cat["title"])
-    toc_lines.append(f"  - [{cat['title']}](#{anchor})")
-toc = "\n".join(toc_lines)
+    if start_marker not in content or end_marker not in content:
+        raise RuntimeError("Balises TOP50 introuvables dans README.md")
 
-# --- Assemble and write ---
-content = README_PATH.read_text(encoding="utf-8")
+    before = content.split(start_marker)[0]
+    after = content.split(end_marker)[1]
 
-if START not in content or END not in content:
-    raise RuntimeError("Balises TOP50 introuvables dans README.md")
+    new_content = f"{before}{start_marker}\n{generated_content}\n{end_marker}{after}"
+    readme_path.write_text(new_content, encoding="utf-8")
 
-before = content.split(START)[0]
-after = content.split(END)[1]
 
-generated = f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
+def main():
+    # --- Build global top 50 ---
+    print("Fetching global top 50...")
+    global_items = search_repos(GLOBAL_QUERY, PER_PAGE)
+    global_table = build_table(global_items)
 
-new_content = f"{before}{START}\n{generated}\n{END}{after}"
-README_PATH.write_text(new_content, encoding="utf-8")
+    # --- Build category tables ---
+    category_sections = []
+    for cat in CATEGORIES:
+        tag_start = f"<!-- {cat['tag']}:START -->"
+        tag_end = f"<!-- {cat['tag']}:END -->"
+        print(f"Fetching {cat['title']}...")
+        items = search_repos(cat["query"], CATEGORY_PER_PAGE)
+        table = build_table(items)
+        section = f"### {cat['title']}\n\n{tag_start}\n{table}\n{tag_end}"
+        category_sections.append(section)
+        time.sleep(2)  # avoid rate limiting
 
-print("README.md mis à jour.")
+    categories_block = "\n\n".join(category_sections)
+
+    # --- Build table of contents ---
+    toc = build_toc(CATEGORIES)
+
+    # --- Assemble and write ---
+    generated = (
+        f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
+    )
+    update_readme(README_PATH, START, END, generated)
+
+    print("README.md mis à jour.")
+
+
+if __name__ == "__main__":
+    main()
