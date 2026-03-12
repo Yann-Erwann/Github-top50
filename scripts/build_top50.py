@@ -13,49 +13,104 @@ CATEGORY_PER_PAGE = 10
 
 CATEGORIES = [
     {
-        "title": "🔒 Security & DevSecOps",
-        "tag": "SECURITY",
-        "query": "topic:devsecops stars:>500",
+        "title": "☕ Backend — Java & Spring Boot",
+        "tag": "JAVA",
+        "query": "language:java topic:spring-boot stars:>1000",
     },
     {
-        "title": "☁️ Infrastructure & Cloud",
-        "tag": "INFRA",
-        "query": "topic:infrastructure-as-code stars:>500",
+        "title": "🟢 Backend — NestJS & Node.js",
+        "tag": "NESTJS",
+        "query": "topic:nestjs stars:>500",
     },
     {
-        "title": "⚛️ Frontend Frameworks",
-        "tag": "FRONTEND",
+        "title": "⚛️ Frontend — React & Next.js",
+        "tag": "REACT",
         "query": "topic:react stars:>5000",
     },
     {
-        "title": "☕ Java Ecosystem",
-        "tag": "JAVA",
-        "query": "language:java stars:>5000",
+        "title": "🅰️ Frontend - Angular",
+        "tag": "ANGULAR",
+        "query": "topic:angular stars:>1000",
     },
     {
-        "title": "🤖 AI & Machine Learning",
-        "tag": "AI",
-        "query": "topic:machine-learning stars:>5000",
+        "title": "🎨 Frontend — UI & Design Systems",
+        "tag": "UIDESIGN",
+        "query": "topic:design-system stars:>500",
     },
     {
-        "title": "📊 Observability & SRE",
-        "tag": "OBS",
-        "query": "topic:observability stars:>500",
-    },
-    {
-        "title": "🔌 API Design & Contracts",
+        "title": "🔌 API & Contracts",
         "tag": "API",
         "query": "topic:openapi stars:>500",
     },
     {
-        "title": "🛠️ Developer Tools & CLI",
+        "title": "🏗️ Architecture-DDD/Event Storming",
+        "tag": "DDD",
+        "query": "topic:domain-driven-design stars:>200",
+    },
+    {
+        "title": "🧪 Architecture — TDD & Tests",
+        "tag": "TDD",
+        "query": "topic:testing-framework stars:>1000",
+    },
+    {
+        "title": "📐 Architecture-Agile Engineering",
+        "tag": "AGILE",
+        "query": "topic:architecture stars:>1000",
+    },
+    {
+        "title": "📊 Quality & Observability",
+        "tag": "OBS",
+        "query": "topic:observability stars:>500",
+    },
+    {
+        "title": "☁️ DevOps & Infrastructure",
+        "tag": "DEVOPS",
+        "query": "topic:devops stars:>5000",
+    },
+    {
+        "title": "🌐 Cloud & Platform Engineering",
+        "tag": "CLOUD",
+        "query": "topic:cloud-native stars:>1000",
+    },
+    {
+        "title": "🤖 MLOps & Data Engineering",
+        "tag": "MLOPS",
+        "query": "topic:mlops stars:>1000",
+    },
+    {
+        "title": "🗄️ Data & Databases",
+        "tag": "DB",
+        "query": "topic:database stars:>5000",
+    },
+    {
+        "title": "🛠️ Dev Tools & Productivity",
         "tag": "DEVTOOLS",
         "query": "topic:cli stars:>5000",
     },
     {
-        "title": "🗄️ Databases",
-        "tag": "DB",
-        "query": "topic:database stars:>5000",
+        "title": "🔧 Toolchain — Build & DX",
+        "tag": "TOOLCHAIN",
+        "query": "topic:build-tool stars:>1000",
+    },
+    {
+        "title": "📚 Tech Radar & References",
+        "tag": "TECHRADAR",
+        "query": "topic:awesome-list stars:>10000",
+    },
+    {
+        "title": "📖 Documentation & ADR",
+        "tag": "DOCS",
+        "query": "topic:documentation stars:>5000",
+    },
+    {
+        "title": "⚖️ IA Ethics & Responsible AI",
+        "tag": "ETHICSAI",
+        "query": "topic:fairness-ai stars:>200",
+    },
+    {
+        "title": "🛡️ Governance & Compliance",
+        "tag": "GOVERNANCE",
+        "query": "topic:compliance stars:>500",
     },
 ]
 
