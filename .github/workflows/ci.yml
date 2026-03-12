@@ -51,7 +51,7 @@ jobs:
       - name: Run tests with coverage
         run: >
           python -m uv run --frozen --extra dev
-          pytest tests/ -v
+          pytest -v
           --cov=src/github_top50
           --cov=scripts
           --cov-branch

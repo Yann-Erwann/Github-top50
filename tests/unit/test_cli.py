@@ -2,9 +2,7 @@ import runpy
 import sys
 from pathlib import Path
 
-SRC_PATH = Path(__file__).resolve().parents[1] / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
+SRC_PATH = Path(__file__).resolve().parents[2] / "src"
 
 from github_top50 import cli  # noqa: E402
 from github_top50.services import readme_builder as rb  # noqa: E402
