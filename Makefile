@@ -1,20 +1,26 @@
-.PHONY: install install-dev lint format test run
+.PHONY: install install-dev lint format test audit security run
 
 install:
 	pip install -r requirements.txt
 
 install-dev:
-	pip install -r requirements.txt
-	pip install -e ".[dev]"
+	python -m pip install uv
+	python -m uv sync --frozen --extra dev
 
 lint:
-	ruff check src scripts tests
+	python -m uv run --frozen --extra dev ruff check src scripts tests
 
 format:
-	ruff format src scripts tests
+	python -m uv run --frozen --extra dev ruff format src scripts tests
 
 test:
-	pytest tests/ -v
+	python -m uv run --frozen --extra dev pytest tests/ -v
+
+audit:
+	python -m uv run --frozen --extra dev pip-audit
+
+security:
+	python -m uv run --frozen --extra dev bandit -q -r src scripts
 
 run:
-	python -m github_top50
+	python -m uv run --frozen python -m github_top50
