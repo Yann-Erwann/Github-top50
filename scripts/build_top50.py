@@ -3,6 +3,17 @@ import time
 import requests
 from pathlib import Path
 
+import re
+
+
+def slugify(title):
+    """Convert a markdown heading to a GitHub-compatible anchor."""
+    # Remove emoji and special chars, lowercase, replace spaces with hyphens
+    slug = re.sub(r"[^\w\s-]", "", title).strip().lower()
+    slug = re.sub(r"[\s]+", "-", slug)
+    return slug
+
+
 README_PATH = Path("README.md")
 START = "<!-- TOP50:START -->"
 END = "<!-- TOP50:END -->"
@@ -117,6 +128,21 @@ CATEGORIES = [
         "tag": "GOVERNANCE",
         "query": "topic:compliance stars:>500",
     },
+    {
+        "title": "🔒 Security & DevSecOps",
+        "tag": "SECURITY",
+        "query": "topic:devsecops stars:>500",
+    },
+    {
+        "title": "🧠 GenAI & LLM",
+        "tag": "GENAI",
+        "query": "topic:llm stars:>1000",
+    },
+    {
+        "title": "🐳 Kubernetes & Containers",
+        "tag": "K8S",
+        "query": "topic:kubernetes stars:>5000",
+    },
 ]
 
 token = os.getenv("GITHUB_TOKEN")
@@ -186,6 +212,15 @@ for cat in CATEGORIES:
 
 categories_block = "\n\n".join(category_sections)
 
+# --- Build table of contents ---
+toc_lines = ["#### 📑 Sommaire\n"]
+toc_lines.append(f"- [🏆 Top 50 GitHub Stars](#-top-50-github-stars)")
+toc_lines.append(f"- [📂 Top par catégorie](#-top-par-catégorie)")
+for cat in CATEGORIES:
+    anchor = slugify(cat["title"])
+    toc_lines.append(f"  - [{cat['title']}](#{anchor})")
+toc = "\n".join(toc_lines)
+
 # --- Assemble and write ---
 content = README_PATH.read_text(encoding="utf-8")
 
@@ -195,7 +230,7 @@ if START not in content or END not in content:
 before = content.split(START)[0]
 after = content.split(END)[1]
 
-generated = f"{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
+generated = f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
 
 new_content = f"{before}{START}\n{generated}\n{END}{after}"
 README_PATH.write_text(new_content, encoding="utf-8")
