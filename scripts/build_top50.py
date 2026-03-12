@@ -34,15 +34,16 @@ resp.raise_for_status()
 items = resp.json().get("items", [])
 
 lines = []
-lines.append("| Rang | Repository | Stars | Langage |")
-lines.append("|---:|---|---:|---|")
+lines.append("| Rang | Repository | Description | Stars | Langage |")
+lines.append("|---:|---|---|---:|---|")
 
 for idx, repo in enumerate(items, start=1):
     name = repo["full_name"]
     html_url = repo["html_url"]
     stars = repo["stargazers_count"]
     language = repo["language"] or "-"
-    lines.append(f"| {idx} | [{name}]({html_url}) | {stars:,} | {language} |")
+    description = (repo.get("description") or "-").replace("|", "\\|")
+    lines.append(f"| {idx} | [{name}]({html_url}) | {description} | {stars:,} | {language} |")
 
 generated = "\n".join(lines)
 
