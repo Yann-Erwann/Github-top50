@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from requests.exceptions import HTTPError
 from scripts.build_top50 import (
     build_table,
     build_toc,
@@ -149,9 +150,11 @@ class TestSearchRepos:
     def test_rate_limit_retries(self, mock_get, mock_sleep):
         rate_resp = MagicMock()
         rate_resp.status_code = 403
+        rate_resp.headers = {"Retry-After": "60"}
 
         ok_resp = MagicMock()
         ok_resp.status_code = 200
+        ok_resp.headers = {}
         ok_resp.json.return_value = {"items": [_make_repo()]}
         ok_resp.raise_for_status = MagicMock()
 
@@ -160,6 +163,20 @@ class TestSearchRepos:
         result = search_repos("stars:>1", 10)
         mock_sleep.assert_called_once_with(60)
         assert len(result) == 1
+
+    @patch("scripts.build_top50.time.sleep")
+    @patch("scripts.build_top50.requests.get")
+    def test_non_rate_limit_403_raises_without_sleeping(self, mock_get, mock_sleep):
+        forbidden_resp = MagicMock()
+        forbidden_resp.status_code = 403
+        forbidden_resp.headers = {}
+        forbidden_resp.raise_for_status.side_effect = HTTPError("403 Forbidden")
+        mock_get.return_value = forbidden_resp
+
+        with pytest.raises(HTTPError, match="403 Forbidden"):
+            search_repos("stars:>1", 10)
+
+        mock_sleep.assert_not_called()
 
 
 # ── update_readme ────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 .PHONY: install install-dev lint format test audit security run
 
 install:
-	pip install -r requirements.txt
+	python -m pip install .
 
 install-dev:
 	python -m pip install uv

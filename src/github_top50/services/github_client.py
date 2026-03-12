@@ -24,6 +24,31 @@ def build_headers(token: str | None = None) -> dict[str, str]:
     return headers
 
 
+def get_rate_limit_wait_seconds(response: requests.Response) -> int | None:
+    """Return the retry delay when GitHub explicitly signals rate limiting."""
+    if response.status_code not in {403, 429}:
+        return None
+
+    retry_after = response.headers.get("Retry-After")
+    if retry_after:
+        try:
+            return max(1, int(float(retry_after)))
+        except ValueError:
+            pass
+
+    if response.headers.get("X-RateLimit-Remaining") != "0":
+        return None
+
+    reset_at = response.headers.get("X-RateLimit-Reset")
+    if not reset_at:
+        return RATE_LIMIT_WAIT_SECONDS
+
+    try:
+        return max(1, int(reset_at) - int(time.time()))
+    except ValueError:
+        return RATE_LIMIT_WAIT_SECONDS
+
+
 def search_repos(
     query: str,
     per_page: int,
@@ -45,9 +70,10 @@ def search_repos(
     headers = build_headers(token)
 
     response = request_get(API_URL, headers=headers, params=params, timeout=30)
-    if response.status_code == 403:
-        print(f"Rate limited, waiting {RATE_LIMIT_WAIT_SECONDS}s...")
-        sleep_func(RATE_LIMIT_WAIT_SECONDS)
+    wait_seconds = get_rate_limit_wait_seconds(response)
+    if wait_seconds is not None:
+        print(f"Rate limited, waiting {wait_seconds}s...")
+        sleep_func(wait_seconds)
         response = request_get(API_URL, headers=headers, params=params, timeout=30)
 
     response.raise_for_status()

@@ -2,6 +2,8 @@ import runpy
 import sys
 from pathlib import Path
 
+import pytest
+
 SRC_PATH = Path(__file__).resolve().parents[2] / "src"
 
 from github_top50 import cli  # noqa: E402
@@ -133,13 +135,30 @@ def test_main_wires_search_generation_and_readme_update(monkeypatch, tmp_path, c
     assert "README.md mis à jour." in output
 
 
+def test_main_help_exits_without_running_generation(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli,
+        "search_repos",
+        lambda *args, **kwargs: pytest.fail("search_repos should not run for --help"),
+    )
+
+    with pytest.raises(SystemExit, match="0"):
+        cli.main(["--help"])
+
+    output = capsys.readouterr().out
+    assert "Generate the GitHub Top 50 section" in output
+    assert "--readme-path" in output
+
+
 def test_package_main_module_invokes_cli_main(monkeypatch):
     called = {"value": False}
 
-    def fake_main():
+    def fake_main(argv=None):
         called["value"] = True
+        assert argv == []
 
     monkeypatch.setattr("github_top50.cli.main", fake_main)
+    monkeypatch.setattr(sys, "argv", ["github_top50"])
 
     runpy.run_module("github_top50.__main__", run_name="__main__")
 
@@ -151,10 +170,12 @@ def test_script_entrypoint_invokes_main_and_restores_src_path(monkeypatch):
     src_path = str(Path("src").resolve())
     called = {"value": False}
 
-    def fake_main():
+    def fake_main(argv=None):
         called["value"] = True
+        assert argv == []
 
     monkeypatch.setattr("github_top50.main", fake_main)
+    monkeypatch.setattr(sys, "argv", [str(script_path)])
 
     removed = False
     if src_path in sys.path:
