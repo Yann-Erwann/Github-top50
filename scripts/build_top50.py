@@ -15,7 +15,7 @@ CATEGORIES = [
     {
         "title": "🔒 Security & DevSecOps",
         "tag": "SECURITY",
-        "query": "topic:security topic:devsecops stars:>500",
+        "query": "topic:devsecops stars:>500",
     },
     {
         "title": "☁️ Infrastructure & Cloud",
@@ -25,37 +25,37 @@ CATEGORIES = [
     {
         "title": "⚛️ Frontend Frameworks",
         "tag": "FRONTEND",
-        "query": "topic:react OR topic:angular OR topic:vue stars:>1000",
+        "query": "topic:react stars:>5000",
     },
     {
         "title": "☕ Java Ecosystem",
         "tag": "JAVA",
-        "query": "language:java topic:java stars:>1000",
+        "query": "language:java stars:>5000",
     },
     {
         "title": "🤖 AI & Machine Learning",
         "tag": "AI",
-        "query": "topic:machine-learning OR topic:mlops stars:>1000",
+        "query": "topic:machine-learning stars:>5000",
     },
     {
         "title": "📊 Observability & SRE",
         "tag": "OBS",
-        "query": "topic:observability OR topic:monitoring OR topic:site-reliability-engineering stars:>500",
+        "query": "topic:observability stars:>500",
     },
     {
         "title": "🔌 API Design & Contracts",
         "tag": "API",
-        "query": "topic:openapi OR topic:graphql OR topic:asyncapi stars:>500",
+        "query": "topic:openapi stars:>500",
     },
     {
         "title": "🛠️ Developer Tools & CLI",
         "tag": "DEVTOOLS",
-        "query": "topic:cli OR topic:terminal stars:>5000",
+        "query": "topic:cli stars:>5000",
     },
     {
         "title": "🗄️ Databases",
         "tag": "DB",
-        "query": "topic:database OR topic:vector-database stars:>2000",
+        "query": "topic:database stars:>5000",
     },
 ]
 
