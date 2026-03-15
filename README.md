@@ -8,6 +8,13 @@
 [![Security](https://github.com/Yann-Erwann/Github-top50/actions/workflows/security.yml/badge.svg)](https://github.com/Yann-Erwann/Github-top50/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## Repository Docs
+
+- [Architecture](docs/architecture.md)
+- [ADR 0001](docs/adr/0001-package-boundaries-and-automation.md)
+- [Runbook: README Update Failure](docs/runbooks/readme-update-failure.md)
+- [Changelog](CHANGELOG.md)
+
 ---
 
 ## 🏆 Top 50 GitHub Stars
