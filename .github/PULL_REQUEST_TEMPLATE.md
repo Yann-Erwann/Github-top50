@@ -16,5 +16,7 @@ Brief description of the changes.
 - [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
 - [ ] Self-reviewed my own code
 - [ ] Tested locally (`python scripts/build_top50.py`)
+- [ ] Security impact reviewed (tokens, dependencies, workflows, generated content)
+- [ ] Rollback path identified for CI/CD or automation changes
 - [ ] No new warnings or errors
 - [ ] Updated CHANGELOG.md if applicable
