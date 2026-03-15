@@ -4,24 +4,30 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
 
-from github_top50.domain.models import Category
+from github_top50.domain.models import (
+    CategoryLike,
+    ReadmeSection,
+    RepositoryLike,
+    to_category_definition,
+    to_repository,
+)
 from github_top50.utils.slug import slugify
 
 
-def build_table(items: Sequence[Mapping[str, Any]], start: int = 1) -> str:
+def build_table(items: Sequence[RepositoryLike], start: int = 1) -> str:
     """Build a markdown table from repository items."""
     lines = [
         "| # | Repository | Description | ⭐ Stars | Langage |",
         "|---:|---|---|---:|---|",
     ]
     for idx, repo in enumerate(items, start=start):
-        name = repo["full_name"]
-        html_url = repo["html_url"]
-        stars = repo["stargazers_count"]
-        language = repo["language"] or "-"
-        desc = (repo.get("description") or "-").replace("|", "\\|")
+        repository = to_repository(repo)
+        name = repository.full_name
+        html_url = repository.html_url
+        stars = repository.stargazers_count
+        language = repository.language or "-"
+        desc = (repository.description or "-").replace("|", "\\|")
         if len(desc) > 100:
             desc = desc[:97] + "..."
         lines.append(
@@ -30,39 +36,55 @@ def build_table(items: Sequence[Mapping[str, Any]], start: int = 1) -> str:
     return "\n".join(lines)
 
 
-def build_toc(categories: Sequence[Category]) -> str:
+def build_toc(categories: Sequence[CategoryLike]) -> str:
     """Build the README table of contents."""
     toc_lines = ["#### 📑 Sommaire\n"]
     toc_lines.append("- [🏆 Top 50 GitHub Stars](#-top-50-github-stars)")
     toc_lines.append("- [📂 Top par catégorie](#-top-par-catégorie)")
     for category in categories:
-        toc_lines.append(f"  - [{category['title']}](#{slugify(category['title'])})")
+        category_definition = to_category_definition(category)
+        toc_lines.append(
+            f"  - [{category_definition.title}](#{slugify(category_definition.title)})"
+        )
     return "\n".join(toc_lines)
 
 
 def build_category_section(
-    category: Category, items: Sequence[Mapping[str, Any]]
+    category: CategoryLike, items: Sequence[RepositoryLike]
 ) -> str:
     """Render a single category section with stable markers."""
-    tag_start = f"<!-- {category['tag']}:START -->"
-    tag_end = f"<!-- {category['tag']}:END -->"
-    table = build_table(items)
-    return f"### {category['title']}\n\n{tag_start}\n{table}\n{tag_end}"
+    return create_category_section(category, items).render()
+
+
+def create_category_section(
+    category: CategoryLike, items: Sequence[RepositoryLike]
+) -> ReadmeSection:
+    """Build a typed README section for a category."""
+    category_definition = to_category_definition(category)
+    return ReadmeSection(
+        title=category_definition.title,
+        content=build_table(items),
+        start_marker=f"<!-- {category_definition.tag}:START -->",
+        end_marker=f"<!-- {category_definition.tag}:END -->",
+    )
 
 
 def build_generated_content(
-    global_items: Sequence[Mapping[str, Any]],
-    categories: Sequence[Category],
-    category_items: Mapping[str, Sequence[Mapping[str, Any]]],
+    global_items: Sequence[RepositoryLike],
+    categories: Sequence[CategoryLike],
+    category_items: Mapping[str, Sequence[RepositoryLike]],
 ) -> str:
     """Assemble the full generated README block."""
+    normalized_categories = tuple(
+        to_category_definition(category) for category in categories
+    )
     global_table = build_table(global_items)
     category_sections = [
-        build_category_section(category, category_items[category["tag"]])
-        for category in categories
+        create_category_section(category, category_items[category.tag]).render()
+        for category in normalized_categories
     ]
     categories_block = "\n\n".join(category_sections)
-    toc = build_toc(categories)
+    toc = build_toc(normalized_categories)
     return f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
 
 

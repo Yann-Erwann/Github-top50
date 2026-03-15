@@ -73,8 +73,8 @@ def test_generated_content_uses_only_internal_anchors_and_github_repo_links():
     categories = CATEGORIES[:2]
     global_items = [_make_repo(name="org/global-repo")]
     category_items = {
-        categories[0]["tag"]: [_make_repo(name="org/java-repo")],
-        categories[1]["tag"]: [_make_repo(name="org/node-repo")],
+        categories[0].tag: [_make_repo(name="org/java-repo")],
+        categories[1].tag: [_make_repo(name="org/node-repo")],
     }
 
     content = build_generated_content(global_items, categories, category_items)
@@ -89,8 +89,8 @@ def test_generated_content_repository_links_match_owner_repo_paths():
     categories = CATEGORIES[:2]
     global_items = [_make_repo(name="org/global-repo")]
     category_items = {
-        categories[0]["tag"]: [_make_repo(name="org/java-repo")],
-        categories[1]["tag"]: [_make_repo(name="org/node-repo")],
+        categories[0].tag: [_make_repo(name="org/java-repo")],
+        categories[1].tag: [_make_repo(name="org/node-repo")],
     }
 
     content = build_generated_content(global_items, categories, category_items)

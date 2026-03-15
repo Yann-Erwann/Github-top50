@@ -7,6 +7,7 @@ import pytest
 SRC_PATH = Path(__file__).resolve().parents[2] / "src"
 
 from github_top50 import cli  # noqa: E402
+from github_top50.domain.models import ReadmeSection  # noqa: E402
 from github_top50.services import readme_builder as rb  # noqa: E402
 
 
@@ -31,6 +32,18 @@ def test_build_category_section_wraps_table_with_markers():
     assert "| 1 | [owner/repo]" in section
 
 
+def test_create_category_section_returns_typed_section():
+    category = {"title": "🐍 Backend — Python", "tag": "PY", "query": "q"}
+
+    section = rb.create_category_section(category, [_make_repo()])
+
+    assert isinstance(section, ReadmeSection)
+    assert section.title == "🐍 Backend — Python"
+    assert section.start_marker == "<!-- PY:START -->"
+    assert section.end_marker == "<!-- PY:END -->"
+    assert "| 1 | [owner/repo]" in section.render()
+
+
 def test_build_generated_content_assembles_global_and_category_sections():
     categories = (
         {"title": "🐍 Backend — Python", "tag": "PY", "query": "q1"},
@@ -52,94 +65,45 @@ def test_build_generated_content_assembles_global_and_category_sections():
 
 
 def test_fetch_category_items_queries_each_category_and_sleeps(monkeypatch):
-    test_categories = (
-        {"title": "Cat A", "tag": "A", "query": "q-a"},
-        {"title": "Cat B", "tag": "B", "query": "q-b"},
-    )
-    calls = []
-    sleeps = []
+    expected = {"A": [_make_repo(name="org/q-a")]}
 
-    def fake_search(query, per_page):
-        calls.append((query, per_page))
-        return [_make_repo(name=f"org/{query}")]
+    class FakeUseCase:
+        def fetch_category_items(self):
+            return expected
 
-    monkeypatch.setattr(cli, "CATEGORIES", test_categories)
-    monkeypatch.setattr(cli, "CATEGORY_PER_PAGE", 7)
-    monkeypatch.setattr(cli, "search_repos", fake_search)
-    monkeypatch.setattr(cli.time, "sleep", sleeps.append)
+    monkeypatch.setattr(cli, "build_use_case", lambda: FakeUseCase())
 
-    result = cli._fetch_category_items()
-
-    assert calls == [("q-a", 7), ("q-b", 7)]
-    assert sleeps == [2]
-    assert result["A"][0]["full_name"] == "org/q-a"
-    assert result["B"][0]["full_name"] == "org/q-b"
+    assert cli._fetch_category_items() == expected
 
 
 def test_main_wires_search_generation_and_readme_update(monkeypatch, tmp_path, capsys):
-    global_items = [_make_repo(name="org/global")]
-    category_items = {"PY": [_make_repo(name="org/category")]}
-    expected_content = "generated readme block"
     captured = {}
 
-    monkeypatch.setattr(cli, "GLOBAL_QUERY", "stars:>42")
-    monkeypatch.setattr(cli, "PER_PAGE", 42)
-    monkeypatch.setattr(
-        cli,
-        "CATEGORIES",
-        ({"title": "Cat", "tag": "PY", "query": "q"},),
-    )
     monkeypatch.setattr(cli, "README_PATH", tmp_path / "README.md")
     monkeypatch.setattr(cli, "START", "<!-- START -->")
     monkeypatch.setattr(cli, "END", "<!-- END -->")
 
-    def fake_search(query, per_page):
-        captured["search"] = (query, per_page)
-        return global_items
+    class FakeUseCase:
+        def run(self, *, readme_path, start_marker, end_marker):
+            captured["run"] = (readme_path, start_marker, end_marker)
 
-    def fake_fetch_category_items():
-        captured["fetched"] = True
-        return category_items
-
-    def fake_build_generated_content(
-        passed_global_items, categories, passed_category_items
-    ):
-        captured["build"] = (passed_global_items, categories, passed_category_items)
-        return expected_content
-
-    def fake_update_readme(path, start, end, generated):
-        captured["update"] = (path, start, end, generated)
-
-    monkeypatch.setattr(cli, "search_repos", fake_search)
-    monkeypatch.setattr(cli, "_fetch_category_items", fake_fetch_category_items)
-    monkeypatch.setattr(cli, "build_generated_content", fake_build_generated_content)
-    monkeypatch.setattr(cli, "update_readme", fake_update_readme)
+    monkeypatch.setattr(cli, "build_use_case", lambda: FakeUseCase())
 
     cli.main()
 
-    assert captured["search"] == ("stars:>42", 42)
-    assert captured["fetched"] is True
-    assert captured["build"] == (
-        global_items,
-        ({"title": "Cat", "tag": "PY", "query": "q"},),
-        category_items,
-    )
-    assert captured["update"] == (
+    assert captured["run"] == (
         tmp_path / "README.md",
         "<!-- START -->",
         "<!-- END -->",
-        expected_content,
     )
-    output = capsys.readouterr().out
-    assert "Fetching global top 50..." in output
-    assert "README.md mis à jour." in output
+    assert capsys.readouterr().out == ""
 
 
 def test_main_help_exits_without_running_generation(monkeypatch, capsys):
     monkeypatch.setattr(
         cli,
-        "search_repos",
-        lambda *args, **kwargs: pytest.fail("search_repos should not run for --help"),
+        "build_use_case",
+        lambda: pytest.fail("build_use_case should not run for --help"),
     )
 
     with pytest.raises(SystemExit, match="0"):

@@ -71,11 +71,11 @@ class TestFullPipeline:
 
         category_sections = []
         for cat in test_categories:
-            tag_start = f"<!-- {cat['tag']}:START -->"
-            tag_end = f"<!-- {cat['tag']}:END -->"
-            items = search_repos(cat["query"], 10)
+            tag_start = f"<!-- {cat.tag}:START -->"
+            tag_end = f"<!-- {cat.tag}:END -->"
+            items = search_repos(cat.query, 10)
             table = build_table(items)
-            section = f"### {cat['title']}\n\n{tag_start}\n{table}\n{tag_end}"
+            section = f"### {cat.title}\n\n{tag_start}\n{table}\n{tag_end}"
             category_sections.append(section)
 
         categories_block = "\n\n".join(category_sections)
@@ -106,9 +106,9 @@ class TestFullPipeline:
 
         # Category sections
         for cat in test_categories:
-            assert cat["title"] in content
-            assert f"<!-- {cat['tag']}:START -->" in content
-            assert f"<!-- {cat['tag']}:END -->" in content
+            assert cat.title in content
+            assert f"<!-- {cat.tag}:START -->" in content
+            assert f"<!-- {cat.tag}:END -->" in content
 
         # Repo data in table rows
         assert "org/repo-0" in content
@@ -167,18 +167,18 @@ class TestReadmeStructure:
         assert len(anchors) == 2 + len(CATEGORIES)
 
     def test_all_categories_have_unique_tags(self):
-        tags = [c["tag"] for c in CATEGORIES]
+        tags = [c.tag for c in CATEGORIES]
         assert len(tags) == len(set(tags)), "Duplicate category tags found"
 
     def test_all_categories_have_required_keys(self):
         for cat in CATEGORIES:
-            assert "title" in cat
-            assert "tag" in cat
-            assert "query" in cat
+            assert cat.title
+            assert cat.tag
+            assert cat.query
 
     def test_category_markers_are_well_formed(self):
         for cat in CATEGORIES:
-            tag = cat["tag"]
+            tag = cat.tag
             assert tag == tag.upper(), f"Tag '{tag}' should be uppercase"
             assert " " not in tag, f"Tag '{tag}' should not contain spaces"
 
@@ -202,14 +202,14 @@ class TestSearchAndBuild:
     @patch("scripts.build_top50.requests.get", side_effect=_mock_api_response)
     def test_search_then_build_with_category_markers(self, mock_get):
         cat = CATEGORIES[0]
-        items = search_repos(cat["query"], 10)
+        items = search_repos(cat.query, 10)
         table = build_table(items)
 
-        tag_start = f"<!-- {cat['tag']}:START -->"
-        tag_end = f"<!-- {cat['tag']}:END -->"
-        section = f"### {cat['title']}\n\n{tag_start}\n{table}\n{tag_end}"
+        tag_start = f"<!-- {cat.tag}:START -->"
+        tag_end = f"<!-- {cat.tag}:END -->"
+        section = f"### {cat.title}\n\n{tag_start}\n{table}\n{tag_end}"
 
-        assert cat["title"] in section
+        assert cat.title in section
         assert tag_start in section
         assert tag_end in section
         assert "| # |" in section
@@ -235,12 +235,12 @@ class TestSearchAndBuild:
 
         sections = []
         for cat in test_cats:
-            items = search_repos(cat["query"], 10)
+            items = search_repos(cat.query, 10)
             table = build_table(items)
-            sections.append(f"### {cat['title']}\n\n{table}")
+            sections.append(f"### {cat.title}\n\n{table}")
 
         full_content = toc + "\n\n" + "\n\n".join(sections)
 
         # Every category mentioned in the TOC should appear as a heading
         for cat in test_cats:
-            assert cat["title"] in full_content
+            assert cat.title in full_content

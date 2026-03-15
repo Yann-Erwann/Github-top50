@@ -9,6 +9,8 @@ from typing import Any
 
 import requests
 
+from github_top50.domain.models import Repository, to_repository
+
 API_URL = "https://api.github.com/search/repositories"
 RATE_LIMIT_WAIT_SECONDS = 60
 RequestGet = Callable[..., requests.Response]
@@ -78,3 +80,29 @@ def search_repos(
 
     response.raise_for_status()
     return response.json().get("items", [])
+
+
+class GitHubRepositoryGateway:
+    """Adapter that exposes typed repository search results."""
+
+    def __init__(
+        self,
+        *,
+        request_get: RequestGet | None = None,
+        sleep_func: SleepFunc | None = None,
+        token: str | None = None,
+    ) -> None:
+        self._request_get = request_get
+        self._sleep_func = sleep_func
+        self._token = token
+
+    def search_repositories(self, query: str, per_page: int) -> list[Repository]:
+        """Search GitHub and normalize results into domain objects."""
+        raw_items = search_repos(
+            query,
+            per_page,
+            request_get=self._request_get,
+            sleep_func=self._sleep_func,
+            token=self._token,
+        )
+        return [to_repository(item) for item in raw_items]
