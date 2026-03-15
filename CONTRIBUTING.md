@@ -35,6 +35,12 @@ Thank you for your interest in contributing to this project!
    ```
 8. **Open a Pull Request** against `main`
 
+## Release Process
+
+1. Update `CHANGELOG.md`
+2. Create and push a semantic version tag such as `v1.1.0`
+3. Let the `Release` workflow publish the GitHub release with generated notes
+
 ## Code Standards
 
 - Python 3.12+

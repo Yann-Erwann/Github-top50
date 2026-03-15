@@ -12,6 +12,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dependabot configuration for automated dependency updates
 - CODEOWNERS for mandatory code review
 - Issue and PR templates
+- Architecture documentation
+- ADR for package boundaries and automation flow
+- README update failure runbook
+- Tag-based GitHub release workflow
+
+### Changed
+- README automation now opens or updates a pull request instead of pushing directly to `main`
+- The packaged CLI now exposes a safe `--help` entrypoint and a `--readme-path` option
+- Local runtime installation now installs the packaged project instead of test-only requirements
 
 ## [1.0.0] - 2026-03-12
 
