@@ -66,6 +66,9 @@ def test_build_generated_content_assembles_global_and_category_sections():
     assert "(#backend-python)" in content
     assert "(#security-devsecops)" in content
     assert "(#top-par-categorie)" in content
+    assert content.index("#### 📑 Sommaire") < content.index(
+        '<a id="top-50-github-stars"></a>'
+    )
 
 
 def test_fetch_category_items_queries_each_category_and_sleeps(monkeypatch):

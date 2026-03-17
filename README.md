@@ -18,11 +18,6 @@
 ---
 
 <!-- TOP50:START -->
-<a id="top-50-github-stars"></a>
-## 🏆 Top 50 GitHub Stars
-
-Les 50 dépôts les plus populaires sur GitHub, mis à jour quotidiennement.
-
 #### 📑 Sommaire
 
 - [🏆 Top 50 GitHub Stars](#top-50-github-stars)
@@ -51,6 +46,11 @@ Les 50 dépôts les plus populaires sur GitHub, mis à jour quotidiennement.
   - [🔒 Security & DevSecOps](#security-devsecops)
   - [🧠 GenAI & LLM](#genai-llm)
   - [🐳 Kubernetes & Containers](#kubernetes-containers)
+
+<a id="top-50-github-stars"></a>
+## 🏆 Top 50 GitHub Stars
+
+Les 50 dépôts les plus populaires sur GitHub, mis à jour quotidiennement.
 
 | # | Repository | Description | ⭐ Stars | Langage |
 |---:|---|---|---:|---|
