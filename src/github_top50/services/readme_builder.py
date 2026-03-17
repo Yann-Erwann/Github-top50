@@ -94,7 +94,7 @@ def build_generated_content(
     toc = build_toc(normalized_categories)
     global_section = ReadmeSection(
         title=TOP_50_TITLE,
-        content=f"{TOP_50_DESCRIPTION}\n\n{toc}\n\n{global_table}",
+        content=f"{TOP_50_DESCRIPTION}\n\n{global_table}",
         heading_level=2,
         anchor=slugify(TOP_50_TITLE),
     )
@@ -104,7 +104,7 @@ def build_generated_content(
         heading_level=2,
         anchor=slugify(TOP_BY_CATEGORY_TITLE),
     )
-    return f"{global_section.render()}\n\n{categories_section.render()}"
+    return f"{toc}\n\n{global_section.render()}\n\n{categories_section.render()}"
 
 
 def update_readme(
