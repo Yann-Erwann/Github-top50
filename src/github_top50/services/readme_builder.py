@@ -14,6 +14,12 @@ from github_top50.domain.models import (
 )
 from github_top50.utils.slug import slugify
 
+TOP_50_TITLE = "🏆 Top 50 GitHub Stars"
+TOP_50_DESCRIPTION = (
+    "Les 50 dépôts les plus populaires sur GitHub, mis à jour quotidiennement."
+)
+TOP_BY_CATEGORY_TITLE = "📂 Top par catégorie"
+
 
 def build_table(items: Sequence[RepositoryLike], start: int = 1) -> str:
     """Build a markdown table from repository items."""
@@ -39,8 +45,8 @@ def build_table(items: Sequence[RepositoryLike], start: int = 1) -> str:
 def build_toc(categories: Sequence[CategoryLike]) -> str:
     """Build the README table of contents."""
     toc_lines = ["#### 📑 Sommaire\n"]
-    toc_lines.append("- [🏆 Top 50 GitHub Stars](#-top-50-github-stars)")
-    toc_lines.append("- [📂 Top par catégorie](#-top-par-catégorie)")
+    toc_lines.append(f"- [{TOP_50_TITLE}](#{slugify(TOP_50_TITLE)})")
+    toc_lines.append(f"- [{TOP_BY_CATEGORY_TITLE}](#{slugify(TOP_BY_CATEGORY_TITLE)})")
     for category in categories:
         category_definition = to_category_definition(category)
         toc_lines.append(
@@ -64,6 +70,7 @@ def create_category_section(
     return ReadmeSection(
         title=category_definition.title,
         content=build_table(items),
+        anchor=slugify(category_definition.title),
         start_marker=f"<!-- {category_definition.tag}:START -->",
         end_marker=f"<!-- {category_definition.tag}:END -->",
     )
@@ -85,7 +92,19 @@ def build_generated_content(
     ]
     categories_block = "\n\n".join(category_sections)
     toc = build_toc(normalized_categories)
-    return f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
+    global_section = ReadmeSection(
+        title=TOP_50_TITLE,
+        content=f"{TOP_50_DESCRIPTION}\n\n{toc}\n\n{global_table}",
+        heading_level=2,
+        anchor=slugify(TOP_50_TITLE),
+    )
+    categories_section = ReadmeSection(
+        title=TOP_BY_CATEGORY_TITLE,
+        content=categories_block,
+        heading_level=2,
+        anchor=slugify(TOP_BY_CATEGORY_TITLE),
+    )
+    return f"{global_section.render()}\n\n{categories_section.render()}"
 
 
 def update_readme(

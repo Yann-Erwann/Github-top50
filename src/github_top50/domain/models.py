@@ -52,12 +52,16 @@ class ReadmeSection:
     title: str
     content: str
     heading_level: int = 3
+    anchor: str | None = None
     start_marker: str | None = None
     end_marker: str | None = None
 
     def render(self) -> str:
         """Render the section into markdown."""
-        lines = [f"{'#' * self.heading_level} {self.title}", ""]
+        lines: list[str] = []
+        if self.anchor:
+            lines.append(f'<a id="{self.anchor}"></a>')
+        lines.extend([f"{'#' * self.heading_level} {self.title}", ""])
         if self.start_marker and self.end_marker:
             lines.extend([self.start_marker, self.content, self.end_marker])
         else:

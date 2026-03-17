@@ -26,6 +26,15 @@ class TestSlugify:
     def test_special_characters(self):
         assert slugify("API & Contracts") == "api-contracts"
 
+    def test_accents_are_normalized(self):
+        assert slugify("📂 Top par catégorie") == "top-par-categorie"
+
+    def test_separators_are_preserved_as_word_boundaries(self):
+        assert (
+            slugify("🏗️ Architecture-DDD/Event Storming")
+            == "architecture-ddd-event-storming"
+        )
+
     def test_multiple_spaces(self):
         assert slugify("a   b   c") == "a-b-c"
 
