@@ -10,6 +10,7 @@ from github_top50.services.readme_builder import build_generated_content
 
 MARKDOWN_LINK_RE = re.compile(r"(?<!\!)\[(?P<label>[^\]]+)\]\((?P<target>[^)]+)\)")
 HEADING_RE = re.compile(r"^#{2,3}\s+(?P<title>.+)$", re.MULTILINE)
+ANCHOR_ID_RE = re.compile(r'<a id="(?P<id>[^"]+)"></a>')
 
 
 def _make_repo(
@@ -54,6 +55,10 @@ def _extract_internal_links(content: str) -> list[tuple[str, str]]:
         for label, target in _extract_markdown_links(content)
         if target.startswith("#")
     ]
+
+
+def _extract_anchor_ids(content: str) -> set[str]:
+    return {match.group("id") for match in ANCHOR_ID_RE.finditer(content)}
 
 
 def _assert_is_github_repository_link(label: str, target: str) -> None:
@@ -113,9 +118,11 @@ def test_committed_readme_top50_internal_links_reference_existing_headings():
     readme_content = README_PATH.read_text(encoding="utf-8")
     top50_block = _extract_top50_block(readme_content)
     headings = {match.group("title") for match in HEADING_RE.finditer(readme_content)}
+    anchor_ids = _extract_anchor_ids(readme_content)
 
     internal_links = _extract_internal_links(top50_block)
 
     assert internal_links
-    for label, _ in internal_links:
+    for label, target in internal_links:
         assert label in headings
+        assert target.removeprefix("#") in anchor_ids
