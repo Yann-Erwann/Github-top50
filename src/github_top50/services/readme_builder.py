@@ -21,23 +21,41 @@ TOP_50_DESCRIPTION = (
 TOP_BY_CATEGORY_TITLE = "📂 Top par catégorie"
 
 
+def format_trend(repository: RepositoryLike, fallback_rank: int) -> str:
+    """Render the rank delta compared with the previous snapshot."""
+    normalized_repository = to_repository(repository)
+    current_rank = normalized_repository.rank or fallback_rank
+    previous_rank = normalized_repository.previous_rank
+
+    if previous_rank is None:
+        return "NEW"
+    if previous_rank > current_rank:
+        return f"↑ {previous_rank - current_rank}"
+    if previous_rank < current_rank:
+        return f"↓ {current_rank - previous_rank}"
+    return "="
+
+
 def build_table(items: Sequence[RepositoryLike], start: int = 1) -> str:
     """Build a markdown table from repository items."""
     lines = [
-        "| # | Repository | Description | ⭐ Stars | Langage |",
-        "|---:|---|---|---:|---|",
+        "| # | Trend | Repository | Description | ⭐ Stars | Langage |",
+        "|---:|:---:|---|---|---:|---|",
     ]
     for idx, repo in enumerate(items, start=start):
         repository = to_repository(repo)
+        rank = repository.rank or idx
         name = repository.full_name
         html_url = repository.html_url
         stars = repository.stargazers_count
         language = repository.language or "-"
         desc = (repository.description or "-").replace("|", "\\|")
+        trend = format_trend(repository, rank)
         if len(desc) > 100:
             desc = desc[:97] + "..."
         lines.append(
-            f"| {idx} | [{name}]({html_url}) | {desc} | {stars:,} | {language} |"
+            f"| {rank} | {trend} | [{name}]({html_url}) | "
+            f"{desc} | {stars:,} | {language} |"
         )
     return "\n".join(lines)
 

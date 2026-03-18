@@ -29,7 +29,7 @@ def test_build_category_section_wraps_table_with_markers():
     assert section.startswith('<a id="backend-python"></a>\n### 🐍 Backend — Python')
     assert "<!-- PY:START -->" in section
     assert "<!-- PY:END -->" in section
-    assert "| 1 | [owner/repo]" in section
+    assert "| 1 | NEW | [owner/repo]" in section
 
 
 def test_create_category_section_returns_typed_section():
@@ -42,7 +42,7 @@ def test_create_category_section_returns_typed_section():
     assert section.anchor == "backend-python"
     assert section.start_marker == "<!-- PY:START -->"
     assert section.end_marker == "<!-- PY:END -->"
-    assert "| 1 | [owner/repo]" in section.render()
+    assert "| 1 | NEW | [owner/repo]" in section.render()
 
 
 def test_build_generated_content_assembles_global_and_category_sections():
