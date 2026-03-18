@@ -26,10 +26,10 @@ def test_build_category_section_wraps_table_with_markers():
 
     section = rb.build_category_section(category, [_make_repo()])
 
-    assert section.startswith("### 🐍 Backend — Python")
+    assert section.startswith('<a id="backend-python"></a>\n### 🐍 Backend — Python')
     assert "<!-- PY:START -->" in section
     assert "<!-- PY:END -->" in section
-    assert "| 1 | [owner/repo]" in section
+    assert "| 1 | NEW | [owner/repo]" in section
 
 
 def test_create_category_section_returns_typed_section():
@@ -39,9 +39,10 @@ def test_create_category_section_returns_typed_section():
 
     assert isinstance(section, ReadmeSection)
     assert section.title == "🐍 Backend — Python"
+    assert section.anchor == "backend-python"
     assert section.start_marker == "<!-- PY:START -->"
     assert section.end_marker == "<!-- PY:END -->"
-    assert "| 1 | [owner/repo]" in section.render()
+    assert "| 1 | NEW | [owner/repo]" in section.render()
 
 
 def test_build_generated_content_assembles_global_and_category_sections():
@@ -57,11 +58,17 @@ def test_build_generated_content_assembles_global_and_category_sections():
 
     content = rb.build_generated_content(global_items, categories, category_items)
 
+    assert '<a id="top-50-github-stars"></a>' in content
+    assert "## 🏆 Top 50 GitHub Stars" in content
     assert "## 📂 Top par catégorie" in content
     assert "org/python-lib" in content
     assert "org/security-lib" in content
     assert "(#backend-python)" in content
     assert "(#security-devsecops)" in content
+    assert "(#top-par-categorie)" in content
+    assert content.index("#### 📑 Sommaire") < content.index(
+        '<a id="top-50-github-stars"></a>'
+    )
 
 
 def test_fetch_category_items_queries_each_category_and_sleeps(monkeypatch):

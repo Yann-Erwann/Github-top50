@@ -8,15 +8,18 @@ from scripts.build_top50 import (
     CATEGORIES,
     END,
     START,
+    build_generated_content,
     build_table,
     build_toc,
     search_repos,
+    slugify,
     update_readme,
 )
 
 
 def _make_repo(name="owner/repo", stars=100, language="Python", description="A repo"):
     return {
+        "id": abs(hash(name)) % 10_000,
         "full_name": name,
         "html_url": f"https://github.com/{name}",
         "stargazers_count": stars,
@@ -65,23 +68,15 @@ class TestFullPipeline:
 
         # --- Run the full pipeline (same logic as main()) ---
         global_items = search_repos("stars:>1", 50)
-        global_table = build_table(global_items)
 
         test_categories = CATEGORIES[:3]  # use only 3 categories to keep it fast
 
-        category_sections = []
+        category_items = {}
         for cat in test_categories:
-            tag_start = f"<!-- {cat.tag}:START -->"
-            tag_end = f"<!-- {cat.tag}:END -->"
-            items = search_repos(cat.query, 10)
-            table = build_table(items)
-            section = f"### {cat.title}\n\n{tag_start}\n{table}\n{tag_end}"
-            category_sections.append(section)
+            category_items[cat.tag] = search_repos(cat.query, 10)
 
-        categories_block = "\n\n".join(category_sections)
-        toc = build_toc(test_categories)
-        generated = (
-            f"{toc}\n\n{global_table}\n\n## 📂 Top par catégorie\n\n{categories_block}"
+        generated = build_generated_content(
+            global_items, test_categories, category_items
         )
         update_readme(readme, START, END, generated)
 
@@ -100,13 +95,16 @@ class TestFullPipeline:
         assert "Sommaire" in content
         assert "Top 50 GitHub Stars" in content
         assert "Top par catégorie" in content
+        assert '<a id="top-50-github-stars"></a>' in content
+        assert '<a id="top-par-categorie"></a>' in content
 
         # Global table
-        assert "| # | Repository | Description |" in content
+        assert "| # | Trend | Repository | Description |" in content
 
         # Category sections
         for cat in test_categories:
             assert cat.title in content
+            assert f'<a id="{slugify(cat.title)}"></a>' in content
             assert f"<!-- {cat.tag}:START -->" in content
             assert f"<!-- {cat.tag}:END -->" in content
 
@@ -122,9 +120,7 @@ class TestFullPipeline:
 
         def _generate():
             items = search_repos("stars:>1", 50)
-            table = build_table(items)
-            toc = build_toc([])
-            generated = f"{toc}\n\n{table}"
+            generated = build_generated_content(items, [], {})
             update_readme(readme, START, END, generated)
             return readme.read_text(encoding="utf-8")
 
@@ -149,7 +145,7 @@ class TestReadmeStructure:
 
         for line in lines[2:]:
             cols = [c.strip() for c in line.split("|") if c.strip()]
-            assert len(cols) == 5, f"Expected 5 columns, got {len(cols)}: {line}"
+            assert len(cols) == 6, f"Expected 6 columns, got {len(cols)}: {line}"
 
     def test_table_links_are_valid_markdown(self):
         items = FAKE_ITEMS[:3]
@@ -232,15 +228,12 @@ class TestSearchAndBuild:
         """TOC anchor links should correspond to generated section headings."""
         test_cats = CATEGORIES[:3]
         toc = build_toc(test_cats)
+        full_content = build_generated_content(
+            FAKE_ITEMS,
+            test_cats,
+            {cat.tag: FAKE_ITEMS for cat in test_cats},
+        )
 
-        sections = []
         for cat in test_cats:
-            items = search_repos(cat.query, 10)
-            table = build_table(items)
-            sections.append(f"### {cat.title}\n\n{table}")
-
-        full_content = toc + "\n\n" + "\n\n".join(sections)
-
-        # Every category mentioned in the TOC should appear as a heading
-        for cat in test_cats:
-            assert cat.title in full_content
+            assert f"(#{slugify(cat.title)})" in toc
+            assert f'<a id="{slugify(cat.title)}"></a>' in full_content

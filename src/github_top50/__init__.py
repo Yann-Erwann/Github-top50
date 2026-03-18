@@ -7,12 +7,15 @@ from github_top50.config import (
     CATEGORY_PER_PAGE,
     END,
     GLOBAL_QUERY,
+    HISTORY_DIR,
+    LATEST_SNAPSHOT_PATH,
     PER_PAGE,
     README_PATH,
     START,
 )
 from github_top50.domain.models import CategoryDefinition, ReadmeSection, Repository
 from github_top50.services.github_client import GitHubRepositoryGateway, search_repos
+from github_top50.services.history_store import SnapshotStore, apply_rank_changes
 from github_top50.services.readme_builder import (
     build_category_section,
     build_generated_content,
@@ -31,11 +34,15 @@ __all__ = [
     "GenerateTop50ReadmeUseCase",
     "GLOBAL_QUERY",
     "GitHubRepositoryGateway",
+    "HISTORY_DIR",
+    "LATEST_SNAPSHOT_PATH",
     "PER_PAGE",
     "README_PATH",
     "ReadmeSection",
     "Repository",
+    "SnapshotStore",
     "START",
+    "apply_rank_changes",
     "build_category_section",
     "build_generated_content",
     "build_table",

@@ -1,12 +1,15 @@
-"""Helpers for generating GitHub-compatible anchors."""
+"""Helpers for generating stable README anchor identifiers."""
+
+from __future__ import annotations
 
 import re
+import unicodedata
 
-_NON_ANCHOR_CHARS = re.compile(r"[^\w\s-]")
-_WHITESPACE_RUNS = re.compile(r"[\s]+")
+_NON_ALNUM_RUNS = re.compile(r"[^a-z0-9]+")
 
 
 def slugify(title: str) -> str:
-    """Convert a markdown heading to a GitHub-compatible anchor."""
-    slug = _NON_ANCHOR_CHARS.sub("", title).strip().lower()
-    return _WHITESPACE_RUNS.sub("-", slug)
+    """Convert a heading title into a stable ASCII anchor identifier."""
+    normalized = unicodedata.normalize("NFKD", title)
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii").lower()
+    return _NON_ALNUM_RUNS.sub("-", ascii_text).strip("-")
