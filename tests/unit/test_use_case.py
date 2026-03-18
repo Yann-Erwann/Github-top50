@@ -108,3 +108,57 @@ def test_run_builds_content_and_updates_readme(monkeypatch, tmp_path, capsys):
     assert "Fetching global top 50..." in output
     assert "Fetching Cat..." in output
     assert "README.md mis à jour." in output
+
+
+def test_run_applies_rank_changes_and_saves_snapshot(monkeypatch, tmp_path):
+    categories = (CategoryDefinition(title="Cat", tag="PY", query="q-cat"),)
+    gateway = FakeGateway(
+        {
+            "stars:>42": [_make_repo(name="org/global")],
+            "q-cat": [_make_repo(name="org/category")],
+        }
+    )
+    captured = {}
+
+    class FakeSnapshotStore:
+        def load_latest(self):
+            return None
+
+        def save(self, *, captured_at, global_items, categories, category_items):
+            captured["save"] = {
+                "captured_at": captured_at,
+                "global_items": global_items,
+                "categories": categories,
+                "category_items": category_items,
+            }
+            return tmp_path / "data/top50/history/2026-03-18T06-00-00Z.json"
+
+    use_case = GenerateTop50ReadmeUseCase(
+        categories=categories,
+        repository_gateway=gateway,
+        global_query="stars:>42",
+        per_page=42,
+        category_per_page=10,
+        snapshot_store=FakeSnapshotStore(),
+    )
+
+    monkeypatch.setattr(
+        "github_top50.application.generate_top50.build_generated_content",
+        lambda global_items, passed_categories, category_items: (
+            "generated readme block"
+        ),
+    )
+    monkeypatch.setattr(
+        "github_top50.application.generate_top50.update_readme",
+        lambda path, start, end, generated: None,
+    )
+
+    use_case.run(
+        readme_path=tmp_path / "README.md",
+        start_marker="<!-- START -->",
+        end_marker="<!-- END -->",
+    )
+
+    assert captured["save"]["global_items"][0].rank == 1
+    assert captured["save"]["global_items"][0].previous_rank == 1
+    assert captured["save"]["category_items"]["PY"][0].rank == 1

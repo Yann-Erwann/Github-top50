@@ -47,6 +47,7 @@ class TestSlugify:
 
 def _make_repo(name="owner/repo", stars=100, language="Python", description="A repo"):
     return {
+        "id": 1,
         "full_name": name,
         "html_url": f"https://github.com/{name}",
         "stargazers_count": stars,
@@ -62,11 +63,15 @@ class TestBuildTable:
         lines = table.strip().split("\n")
         assert len(lines) == 3  # header + separator + 1 row
         assert "owner/repo" in lines[2]
+        assert "NEW" in lines[2]
         assert "100" in lines[2]
         assert "Python" in lines[2]
 
     def test_numbering_starts_at_1(self):
-        items = [_make_repo(), _make_repo(name="org/lib", stars=50)]
+        items = [
+            _make_repo(),
+            _make_repo(name="org/lib", stars=50, description="A repo"),
+        ]
         table = build_table(items)
         lines = table.strip().split("\n")
         assert lines[2].startswith("| 1 |")
@@ -106,6 +111,54 @@ class TestBuildTable:
         table = build_table([])
         lines = table.strip().split("\n")
         assert len(lines) == 2  # header + separator only
+
+    def test_rank_increase_renders_up_arrow(self):
+        items = [
+            _make_repo(
+                stars=100,
+                description="A repo",
+                name="owner/repo",
+                language="Python",
+            )
+        ]
+        items[0]["rank"] = 1
+        items[0]["previous_rank"] = 4
+
+        table = build_table(items)
+
+        assert "| 1 | ↑ 3 | [owner/repo]" in table
+
+    def test_rank_drop_renders_down_arrow(self):
+        items = [
+            _make_repo(
+                stars=100,
+                description="A repo",
+                name="owner/repo",
+                language="Python",
+            )
+        ]
+        items[0]["rank"] = 5
+        items[0]["previous_rank"] = 2
+
+        table = build_table(items)
+
+        assert "| 5 | ↓ 3 | [owner/repo]" in table
+
+    def test_rank_stability_renders_equal_marker(self):
+        items = [
+            _make_repo(
+                stars=100,
+                description="A repo",
+                name="owner/repo",
+                language="Python",
+            )
+        ]
+        items[0]["rank"] = 3
+        items[0]["previous_rank"] = 3
+
+        table = build_table(items)
+
+        assert "| 3 | = | [owner/repo]" in table
 
 
 # ── build_toc ────────────────────────────────────────────────────────
