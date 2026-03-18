@@ -19,6 +19,7 @@ from scripts.build_top50 import (
 
 def _make_repo(name="owner/repo", stars=100, language="Python", description="A repo"):
     return {
+        "id": abs(hash(name)) % 10_000,
         "full_name": name,
         "html_url": f"https://github.com/{name}",
         "stargazers_count": stars,
@@ -98,7 +99,7 @@ class TestFullPipeline:
         assert '<a id="top-par-categorie"></a>' in content
 
         # Global table
-        assert "| # | Repository | Description |" in content
+        assert "| # | Trend | Repository | Description |" in content
 
         # Category sections
         for cat in test_categories:
@@ -144,7 +145,7 @@ class TestReadmeStructure:
 
         for line in lines[2:]:
             cols = [c.strip() for c in line.split("|") if c.strip()]
-            assert len(cols) == 5, f"Expected 5 columns, got {len(cols)}: {line}"
+            assert len(cols) == 6, f"Expected 6 columns, got {len(cols)}: {line}"
 
     def test_table_links_are_valid_markdown(self):
         items = FAKE_ITEMS[:3]
