@@ -7,6 +7,9 @@ from github_top50.domain.models import CategoryDefinition
 README_PATH = Path("README.md")
 START = "<!-- TOP50:START -->"
 END = "<!-- TOP50:END -->"
+DATA_DIR = Path("data/top50")
+HISTORY_DIR = DATA_DIR / "history"
+LATEST_SNAPSHOT_PATH = DATA_DIR / "latest.json"
 
 GLOBAL_QUERY = "stars:>1"
 PER_PAGE = 50

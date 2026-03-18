@@ -18,11 +18,14 @@ class Category(TypedDict):
 class RepositoryItem(TypedDict, total=False):
     """Subset of GitHub repository fields rendered into the README."""
 
+    id: int
     full_name: str
     html_url: str
     stargazers_count: int
     language: str | None
     description: str | None
+    rank: int
+    previous_rank: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +46,9 @@ class Repository:
     stargazers_count: int
     language: str | None
     description: str | None = None
+    id: int | None = None
+    rank: int | None = None
+    previous_rank: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,9 +97,12 @@ def to_repository(item: RepositoryLike) -> Repository:
         return item
 
     return Repository(
+        id=item.get("id"),
         full_name=item["full_name"],
         html_url=item["html_url"],
         stargazers_count=item["stargazers_count"],
         language=item.get("language"),
         description=item.get("description"),
+        rank=item.get("rank"),
+        previous_rank=item.get("previous_rank"),
     )

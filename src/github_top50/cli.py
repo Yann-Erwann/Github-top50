@@ -12,11 +12,14 @@ from github_top50.config import (
     CATEGORY_PER_PAGE,
     END,
     GLOBAL_QUERY,
+    HISTORY_DIR,
+    LATEST_SNAPSHOT_PATH,
     PER_PAGE,
     README_PATH,
     START,
 )
 from github_top50.services.github_client import GitHubRepositoryGateway
+from github_top50.services.history_store import SnapshotStore
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -41,6 +44,10 @@ def build_use_case() -> GenerateTop50ReadmeUseCase:
         global_query=GLOBAL_QUERY,
         per_page=PER_PAGE,
         category_per_page=CATEGORY_PER_PAGE,
+        snapshot_store=SnapshotStore(
+            latest_snapshot_path=LATEST_SNAPSHOT_PATH,
+            history_dir=HISTORY_DIR,
+        ),
     )
 
 

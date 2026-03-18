@@ -20,6 +20,7 @@ def _make_repo(
     description: str | None = "A repo",
 ) -> dict[str, object]:
     return {
+        "id": abs(hash(name)) % 10_000,
         "full_name": name,
         "html_url": f"https://github.com/{name}",
         "stargazers_count": stars,
