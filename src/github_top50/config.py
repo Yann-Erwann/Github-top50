@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from github_top50.domain.models import CategoryDefinition
+from github_top50.domain.models import (
+    CategoryDefinition,
+    HostingRecommendationDefinition,
+)
 
 README_PATH = Path("README.md")
 START = "<!-- TOP50:START -->"
@@ -135,5 +138,32 @@ CATEGORIES: tuple[CategoryDefinition, ...] = (
         title="🐳 Kubernetes & Containers",
         tag="K8S",
         query="topic:kubernetes stars:>5000",
+    ),
+)
+
+HOSTING_RECOMMENDATIONS: tuple[HostingRecommendationDefinition, ...] = (
+    HostingRecommendationDefinition(
+        stack="React / Next.js",
+        hosting="Vercel",
+        notes=(
+            "Optimise le deploiement Next.js avec previews, edge functions "
+            "et workflows front natifs."
+        ),
+    ),
+    HostingRecommendationDefinition(
+        stack="Angular",
+        hosting="Render Static Site",
+        notes=(
+            "Convient pour une SPA avec build automatise, CDN gere "
+            "et deploiements simples."
+        ),
+    ),
+    HostingRecommendationDefinition(
+        stack="Spring Boot",
+        hosting="Render Web Service",
+        notes=(
+            "Adapte au deploiement d'API et de services Java avec variables "
+            "d'environnement et health checks."
+        ),
     ),
 )

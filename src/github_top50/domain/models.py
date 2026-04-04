@@ -15,6 +15,14 @@ class Category(TypedDict):
     query: str
 
 
+class HostingRecommendation(TypedDict):
+    """A static hosting recommendation rendered into the README."""
+
+    stack: str
+    hosting: str
+    notes: str
+
+
 class RepositoryItem(TypedDict, total=False):
     """Subset of GitHub repository fields rendered into the README."""
 
@@ -35,6 +43,15 @@ class CategoryDefinition:
     title: str
     tag: str
     query: str
+
+
+@dataclass(frozen=True, slots=True)
+class HostingRecommendationDefinition:
+    """Immutable hosting recommendation used by the rendering layer."""
+
+    stack: str
+    hosting: str
+    notes: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +93,9 @@ class ReadmeSection:
 
 
 CategoryLike: TypeAlias = CategoryDefinition | Mapping[str, str]
+HostingRecommendationLike: TypeAlias = (
+    HostingRecommendationDefinition | Mapping[str, str]
+)
 RepositoryLike: TypeAlias = Repository | Mapping[str, Any]
 
 
@@ -105,4 +125,18 @@ def to_repository(item: RepositoryLike) -> Repository:
         description=item.get("description"),
         rank=item.get("rank"),
         previous_rank=item.get("previous_rank"),
+    )
+
+
+def to_hosting_recommendation(
+    item: HostingRecommendationLike,
+) -> HostingRecommendationDefinition:
+    """Normalize a hosting recommendation-like input into a dataclass."""
+    if isinstance(item, HostingRecommendationDefinition):
+        return item
+
+    return HostingRecommendationDefinition(
+        stack=item["stack"],
+        hosting=item["hosting"],
+        notes=item["notes"],
     )

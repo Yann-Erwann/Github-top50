@@ -20,6 +20,7 @@
 <!-- TOP50:START -->
 #### 📑 Sommaire
 
+- [🚀 Hébergement possible](#hebergement-possible)
 - [🏆 Top 50 GitHub Stars](#top-50-github-stars)
 - [📂 Top par catégorie](#top-par-categorie)
   - [☕ Backend — Java & Spring Boot](#backend-java-spring-boot)
@@ -46,6 +47,15 @@
   - [🔒 Security & DevSecOps](#security-devsecops)
   - [🧠 GenAI & LLM](#genai-llm)
   - [🐳 Kubernetes & Containers](#kubernetes-containers)
+
+<a id="hebergement-possible"></a>
+## 🚀 Hébergement possible
+
+| Stack | Hébergement recommandé | Pourquoi |
+|---|---|---|
+| React / Next.js | Vercel | Optimise le deploiement Next.js avec previews, edge functions et workflows front natifs. |
+| Angular | Render Static Site | Convient pour une SPA avec build automatise, CDN gere et deploiements simples. |
+| Spring Boot | Render Web Service | Adapte au deploiement d'API et de services Java avec variables d'environnement et health checks. |
 
 <a id="top-50-github-stars"></a>
 ## 🏆 Top 50 GitHub Stars
