@@ -58,15 +58,24 @@ def test_build_generated_content_assembles_global_and_category_sections():
 
     content = rb.build_generated_content(global_items, categories, category_items)
 
+    assert '<a id="hebergement-possible"></a>' in content
+    assert "## 🚀 Hébergement possible" in content
+    assert "Vercel" in content
+    assert "Render Static Site" in content
+    assert "Render Web Service" in content
     assert '<a id="top-50-github-stars"></a>' in content
     assert "## 🏆 Top 50 GitHub Stars" in content
     assert "## 📂 Top par catégorie" in content
     assert "org/python-lib" in content
     assert "org/security-lib" in content
+    assert "(#hebergement-possible)" in content
     assert "(#backend-python)" in content
     assert "(#security-devsecops)" in content
     assert "(#top-par-categorie)" in content
     assert content.index("#### 📑 Sommaire") < content.index(
+        '<a id="hebergement-possible"></a>'
+    )
+    assert content.index('<a id="hebergement-possible"></a>') < content.index(
         '<a id="top-50-github-stars"></a>'
     )
 
