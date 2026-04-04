@@ -183,6 +183,10 @@ class TestBuildToc:
         toc = build_toc([])
         assert "Sommaire" in toc
 
+    def test_places_hosting_link_last(self):
+        toc = build_toc([])
+        assert toc.index("Top 50 GitHub Stars") < toc.index("Hébergement possible")
+
 
 # ── search_repos ─────────────────────────────────────────────────────
 

@@ -20,7 +20,6 @@
 <!-- TOP50:START -->
 #### 📑 Sommaire
 
-- [🚀 Hébergement possible](#hebergement-possible)
 - [🏆 Top 50 GitHub Stars](#top-50-github-stars)
 - [📂 Top par catégorie](#top-par-categorie)
   - [☕ Backend — Java & Spring Boot](#backend-java-spring-boot)
@@ -47,15 +46,7 @@
   - [🔒 Security & DevSecOps](#security-devsecops)
   - [🧠 GenAI & LLM](#genai-llm)
   - [🐳 Kubernetes & Containers](#kubernetes-containers)
-
-<a id="hebergement-possible"></a>
-## 🚀 Hébergement possible
-
-| Stack | Hébergement recommandé | Pourquoi |
-|---|---|---|
-| React / Next.js | Vercel | Optimise le deploiement Next.js avec previews, edge functions et workflows front natifs. |
-| Angular | Render Static Site | Convient pour une SPA avec build automatise, CDN gere et deploiements simples. |
-| Spring Boot | Render Web Service | Adapte au deploiement d'API et de services Java avec variables d'environnement et health checks. |
+- [🚀 Hébergement possible](#hebergement-possible)
 
 <a id="top-50-github-stars"></a>
 ## 🏆 Top 50 GitHub Stars
@@ -544,6 +535,19 @@ Les 50 dépôts les plus populaires sur GitHub, mis à jour quotidiennement.
 | 9 | = | [Kong/kong](https://github.com/Kong/kong) | 🦍 The API and AI Gateway | 43,105 | Lua |
 | 10 | = | [istio/istio](https://github.com/istio/istio) | Connect, secure, control, and observe services. | 38,074 | Go |
 <!-- K8S:END -->
+
+<a id="hebergement-possible"></a>
+## 🚀 Hébergement possible
+
+Recommandations d'hebergement pour des environnements de test, de demo ou de validation rapide uniquement.
+
+| Stack | Hébergement recommandé | Pourquoi |
+|---|---|---|
+| React / Next.js | Vercel | Optimise le deploiement Next.js avec previews, edge functions et workflows front natifs. |
+| Angular | Render Static Site | Convient pour une SPA avec build automatise, CDN gere et deploiements simples. |
+| NestJS / Node.js | Render Web Service | Adapte aux API et services Node avec deploiement continu, variables d'environnement et endpoints HTTP. |
+| Python | Render Web Service | Convient aux services Flask, FastAPI ou Django avec gestion simple des variables d'environnement et health checks. |
+| Spring Boot | Render Web Service | Adapte au deploiement d'API et de services Java avec variables d'environnement et health checks. |
 <!-- TOP50:END -->
 
 ---
