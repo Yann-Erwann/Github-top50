@@ -67,7 +67,6 @@ def build_table(items: Sequence[RepositoryLike], start: int = 1) -> str:
 def build_toc(categories: Sequence[CategoryLike]) -> str:
     """Build the README table of contents."""
     toc_lines = ["#### 📑 Sommaire\n"]
-    toc_lines.append(f"- [{HOSTING_TITLE}](#{slugify(HOSTING_TITLE)})")
     toc_lines.append(f"- [{TOP_50_TITLE}](#{slugify(TOP_50_TITLE)})")
     toc_lines.append(f"- [{TOP_BY_CATEGORY_TITLE}](#{slugify(TOP_BY_CATEGORY_TITLE)})")
     for category in categories:
@@ -75,6 +74,7 @@ def build_toc(categories: Sequence[CategoryLike]) -> str:
         toc_lines.append(
             f"  - [{category_definition.title}](#{slugify(category_definition.title)})"
         )
+    toc_lines.append(f"- [{HOSTING_TITLE}](#{slugify(HOSTING_TITLE)})")
     return "\n".join(toc_lines)
 
 
@@ -97,9 +97,13 @@ def build_hosting_section(
     items: Sequence[HostingRecommendationLike] = HOSTING_RECOMMENDATIONS,
 ) -> str:
     """Render the static hosting recommendation section."""
+    intro = (
+        "Recommandations d'hebergement pour des environnements de test, "
+        "de demo ou de validation rapide uniquement.\n\n"
+    )
     return ReadmeSection(
         title=HOSTING_TITLE,
-        content=build_hosting_table(items),
+        content=f"{intro}{build_hosting_table(items)}",
         heading_level=2,
         anchor=slugify(HOSTING_TITLE),
     ).render()
@@ -156,8 +160,8 @@ def build_generated_content(
         anchor=slugify(TOP_BY_CATEGORY_TITLE),
     )
     return (
-        f"{toc}\n\n{hosting_section}\n\n{global_section.render()}\n\n"
-        f"{categories_section.render()}"
+        f"{toc}\n\n{global_section.render()}\n\n"
+        f"{categories_section.render()}\n\n{hosting_section}"
     )
 
 
