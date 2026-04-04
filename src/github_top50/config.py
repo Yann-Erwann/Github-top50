@@ -159,6 +159,22 @@ HOSTING_RECOMMENDATIONS: tuple[HostingRecommendationDefinition, ...] = (
         ),
     ),
     HostingRecommendationDefinition(
+        stack="NestJS / Node.js",
+        hosting="Render Web Service",
+        notes=(
+            "Adapte aux API et services Node avec deploiement continu, "
+            "variables d'environnement et endpoints HTTP."
+        ),
+    ),
+    HostingRecommendationDefinition(
+        stack="Python",
+        hosting="Render Web Service",
+        notes=(
+            "Convient aux services Flask, FastAPI ou Django avec gestion "
+            "simple des variables d'environnement et health checks."
+        ),
+    ),
+    HostingRecommendationDefinition(
         stack="Spring Boot",
         hosting="Render Web Service",
         notes=(

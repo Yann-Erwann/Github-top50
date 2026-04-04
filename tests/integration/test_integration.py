@@ -99,6 +99,12 @@ class TestFullPipeline:
         assert '<a id="hebergement-possible"></a>' in content
         assert '<a id="top-50-github-stars"></a>' in content
         assert '<a id="top-par-categorie"></a>' in content
+        assert content.index('<a id="top-50-github-stars"></a>') < content.index(
+            '<a id="top-par-categorie"></a>'
+        )
+        assert content.index('<a id="top-par-categorie"></a>') < content.index(
+            '<a id="hebergement-possible"></a>'
+        )
 
         # Global table
         assert "| # | Trend | Repository | Description |" in content
