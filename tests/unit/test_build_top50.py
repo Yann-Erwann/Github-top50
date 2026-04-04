@@ -169,6 +169,10 @@ class TestBuildToc:
         toc = build_toc([])
         assert "Top 50 GitHub Stars" in toc
 
+    def test_contains_hosting_link(self):
+        toc = build_toc([])
+        assert "Hébergement possible" in toc
+
     def test_contains_category_links(self):
         cats = [{"title": "🐍 Backend — Python", "tag": "PY", "query": "q"}]
         toc = build_toc(cats)

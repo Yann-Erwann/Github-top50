@@ -12,7 +12,7 @@ The project has two execution modes:
 
 ## Repository Layout
 
-- `src/github_top50/config.py`: static configuration, markers, and category metadata
+- `src/github_top50/config.py`: static configuration, markers, category metadata, and hosting recommendations
 - `src/github_top50/cli.py`: command-line entrypoint and orchestration
 - `src/github_top50/services/github_client.py`: GitHub API search client and rate-limit handling
 - `src/github_top50/services/readme_builder.py`: markdown rendering and README replacement
@@ -23,7 +23,7 @@ The project has two execution modes:
 
 1. The CLI loads static categories and README markers from configuration.
 2. The GitHub client fetches the global top repositories and then the category-specific lists.
-3. The README builder renders markdown tables, a table of contents, and category sections.
+3. The README builder renders the hosting section, markdown tables, a table of contents, and category sections.
 4. The generated block replaces the content between `<!-- TOP50:START -->` and `<!-- TOP50:END -->`.
 5. In automation, GitHub Actions opens or updates a pull request instead of pushing directly to `main`.
 

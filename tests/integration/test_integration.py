@@ -93,8 +93,10 @@ class TestFullPipeline:
 
         # TOC present
         assert "Sommaire" in content
+        assert "Hébergement possible" in content
         assert "Top 50 GitHub Stars" in content
         assert "Top par catégorie" in content
+        assert '<a id="hebergement-possible"></a>' in content
         assert '<a id="top-50-github-stars"></a>' in content
         assert '<a id="top-par-categorie"></a>' in content
 
@@ -159,8 +161,8 @@ class TestReadmeStructure:
         toc = build_toc(CATEGORIES)
         anchor_pattern = re.compile(r"\(#[\w-]+\)")
         anchors = anchor_pattern.findall(toc)
-        # 2 global links + 1 per category
-        assert len(anchors) == 2 + len(CATEGORIES)
+        # 3 global links + 1 per category
+        assert len(anchors) == 3 + len(CATEGORIES)
 
     def test_all_categories_have_unique_tags(self):
         tags = [c.tag for c in CATEGORIES]
