@@ -1,11 +1,18 @@
-.PHONY: install install-dev lint format test audit security run
+.PHONY: install install-dev lock lock-check lint format test audit security run
 
 install:
 	python -m pip install .
 
 install-dev:
 	python -m pip install uv
+	python -m uv lock --check
 	python -m uv sync --frozen --extra dev
+
+lock:
+	python -m uv lock --upgrade
+
+lock-check:
+	python -m uv lock --check
 
 lint:
 	python -m uv run --frozen --extra dev ruff check src scripts tests
