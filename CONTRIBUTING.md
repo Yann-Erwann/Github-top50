@@ -22,6 +22,7 @@ Thank you for your interest in contributing to this project!
    ```
 6. **Run security checks** when dependencies, workflows, or API access change:
    ```bash
+   python -m uv lock --upgrade
    make audit
    make security
    ```
