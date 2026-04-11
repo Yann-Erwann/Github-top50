@@ -20,6 +20,7 @@ class HostingRecommendation(TypedDict):
 
     stack: str
     hosting: str
+    url: str
     notes: str
 
 
@@ -51,6 +52,7 @@ class HostingRecommendationDefinition:
 
     stack: str
     hosting: str
+    url: str
     notes: str
 
 
@@ -138,5 +140,6 @@ def to_hosting_recommendation(
     return HostingRecommendationDefinition(
         stack=item["stack"],
         hosting=item["hosting"],
+        url=item["url"],
         notes=item["notes"],
     )

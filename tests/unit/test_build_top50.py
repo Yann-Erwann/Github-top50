@@ -10,6 +10,16 @@ from scripts.build_top50 import (
     update_readme,
 )
 
+from github_top50.domain.models import (
+    HostingRecommendationDefinition,
+    to_hosting_recommendation,
+)
+from github_top50.services.readme_builder import (
+    HOSTING_TITLE,
+    build_hosting_section,
+    build_hosting_table,
+)
+
 # ── slugify ──────────────────────────────────────────────────────────
 
 
@@ -53,6 +63,20 @@ def _make_repo(name="owner/repo", stars=100, language="Python", description="A r
         "stargazers_count": stars,
         "language": language,
         "description": description,
+    }
+
+
+def _make_hosting_recommendation(
+    stack="Next.js",
+    hosting="Vercel",
+    url="https://vercel.com",
+    notes="Déploiement statique simple",
+):
+    return {
+        "stack": stack,
+        "hosting": hosting,
+        "url": url,
+        "notes": notes,
     }
 
 
@@ -186,6 +210,73 @@ class TestBuildToc:
     def test_places_hosting_link_last(self):
         toc = build_toc([])
         assert toc.index("Top 50 GitHub Stars") < toc.index("Hébergement possible")
+
+
+# ── hosting recommendations ─────────────────────────────────────────
+
+
+class TestBuildHostingTable:
+    def test_contains_expected_columns_and_recommendation_link(self):
+        items = [_make_hosting_recommendation()]
+
+        table = build_hosting_table(items)
+        lines = table.strip().split("\n")
+
+        assert lines[0] == "| Stack | Hébergement recommandé | Pourquoi |"
+        assert lines[1] == "|---|---|---|"
+        assert lines[2] == (
+            "| Next.js | [Vercel](https://vercel.com) | Déploiement statique simple |"
+        )
+
+    def test_escapes_pipe_characters_in_rendered_fields(self):
+        items = [
+            _make_hosting_recommendation(
+                stack="Next.js | App Router",
+                hosting="Render | Static",
+                url="https://render.com",
+                notes="Préprod | démo",
+            )
+        ]
+
+        table = build_hosting_table(items)
+
+        assert "Next.js \\| App Router" in table
+        assert "[Render \\| Static](https://render.com)" in table
+        assert "Préprod \\| démo" in table
+
+
+class TestBuildHostingSection:
+    def test_renders_anchor_and_section_title(self):
+        section = build_hosting_section([_make_hosting_recommendation()])
+        expected_anchor = slugify(HOSTING_TITLE)
+
+        lines = section.split("\n")
+
+        assert lines[0] == f'<a id="{expected_anchor}"></a>'
+        assert lines[1] == f"## {HOSTING_TITLE}"
+        assert "| Stack | Hébergement recommandé | Pourquoi |" in section
+
+
+class TestHostingRecommendationNormalization:
+    def test_mapping_is_normalized_to_definition(self):
+        recommendation = to_hosting_recommendation(_make_hosting_recommendation())
+
+        assert recommendation == HostingRecommendationDefinition(
+            stack="Next.js",
+            hosting="Vercel",
+            url="https://vercel.com",
+            notes="Déploiement statique simple",
+        )
+
+    def test_definition_instance_is_returned_as_is(self):
+        recommendation = HostingRecommendationDefinition(
+            stack="Astro",
+            hosting="Cloudflare Pages",
+            url="https://pages.cloudflare.com",
+            notes="CDN global",
+        )
+
+        assert to_hosting_recommendation(recommendation) is recommendation
 
 
 # ── search_repos ─────────────────────────────────────────────────────
