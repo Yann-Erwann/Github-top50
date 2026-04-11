@@ -543,11 +543,12 @@ Recommandations d'hebergement pour des environnements de test, de demo ou de val
 
 | Stack | Hébergement recommandé | Pourquoi |
 |---|---|---|
-| React / Next.js | Vercel | Optimise le deploiement Next.js avec previews, edge functions et workflows front natifs. |
-| Angular | Render Static Site | Convient pour une SPA avec build automatise, CDN gere et deploiements simples. |
-| NestJS / Node.js | Render Web Service | Adapte aux API et services Node avec deploiement continu, variables d'environnement et endpoints HTTP. |
-| Python | Render Web Service | Convient aux services Flask, FastAPI ou Django avec gestion simple des variables d'environnement et health checks. |
-| Spring Boot | Render Web Service | Adapte au deploiement d'API et de services Java avec variables d'environnement et health checks. |
+| React / Next.js | [Vercel](https://vercel.com/docs) | Optimise le deploiement Next.js avec previews, edge functions et workflows front natifs. |
+| Angular | [Vercel](https://vercel.com/docs) | Convient pour une SPA Angular avec previews, CDN gere et deploiements front simples. |
+| Angular (Docker image) | [Render Web Service](https://render.com/docs/web-services) | Adapte si le frontend est servi via une image Docker, par exemple avec Nginx pour des tests ou demos. |
+| NestJS / Node.js (Docker image) | [Render Web Service](https://render.com/docs/web-services) | Adapte aux API et services Node embarques dans une image Docker, avec variables d'environnement et endpoints HTTP. |
+| Python (Docker image) | [Render Web Service](https://render.com/docs/web-services) | Convient aux services Flask, FastAPI ou Django packages en image Docker avec health checks et configuration simple. |
+| Spring Boot (Docker image) | [Render Web Service](https://render.com/docs/web-services) | Adapte au deploiement de services Java packages en image Docker avec variables d'environnement et health checks. |
 <!-- TOP50:END -->
 
 ---
