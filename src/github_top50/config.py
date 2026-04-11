@@ -145,6 +145,7 @@ HOSTING_RECOMMENDATIONS: tuple[HostingRecommendationDefinition, ...] = (
     HostingRecommendationDefinition(
         stack="React / Next.js",
         hosting="Vercel",
+        url="https://vercel.com/docs",
         notes=(
             "Optimise le deploiement Next.js avec previews, edge functions "
             "et workflows front natifs."
@@ -152,34 +153,47 @@ HOSTING_RECOMMENDATIONS: tuple[HostingRecommendationDefinition, ...] = (
     ),
     HostingRecommendationDefinition(
         stack="Angular",
-        hosting="Render Static Site",
+        hosting="Vercel",
+        url="https://vercel.com/docs",
         notes=(
-            "Convient pour une SPA avec build automatise, CDN gere "
-            "et deploiements simples."
+            "Convient pour une SPA Angular avec previews, CDN gere "
+            "et deploiements front simples."
         ),
     ),
     HostingRecommendationDefinition(
-        stack="NestJS / Node.js",
+        stack="Angular (Docker image)",
         hosting="Render Web Service",
+        url="https://render.com/docs/web-services",
         notes=(
-            "Adapte aux API et services Node avec deploiement continu, "
-            "variables d'environnement et endpoints HTTP."
+            "Adapte si le frontend est servi via une image Docker, "
+            "par exemple avec Nginx pour des tests ou demos."
         ),
     ),
     HostingRecommendationDefinition(
-        stack="Python",
+        stack="NestJS / Node.js (Docker image)",
         hosting="Render Web Service",
+        url="https://render.com/docs/web-services",
         notes=(
-            "Convient aux services Flask, FastAPI ou Django avec gestion "
-            "simple des variables d'environnement et health checks."
+            "Adapte aux API et services Node embarques dans une image Docker, "
+            "avec variables d'environnement et endpoints HTTP."
         ),
     ),
     HostingRecommendationDefinition(
-        stack="Spring Boot",
+        stack="Python (Docker image)",
         hosting="Render Web Service",
+        url="https://render.com/docs/web-services",
         notes=(
-            "Adapte au deploiement d'API et de services Java avec variables "
-            "d'environnement et health checks."
+            "Convient aux services Flask, FastAPI ou Django packages en image "
+            "Docker avec health checks et configuration simple."
+        ),
+    ),
+    HostingRecommendationDefinition(
+        stack="Spring Boot (Docker image)",
+        hosting="Render Web Service",
+        url="https://render.com/docs/web-services",
+        notes=(
+            "Adapte au deploiement de services Java packages en image Docker "
+            "avec variables d'environnement et health checks."
         ),
     ),
 )

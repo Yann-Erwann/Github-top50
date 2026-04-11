@@ -62,10 +62,14 @@ def test_build_generated_content_assembles_global_and_category_sections():
     assert "## 🚀 Hébergement possible" in content
     assert "environnements de test" in content
     assert "Vercel" in content
-    assert "Render Static Site" in content
-    assert "NestJS / Node.js" in content
-    assert "Python" in content
+    assert "https://vercel.com/docs" in content
+    assert "Angular (Docker image)" in content
+    assert "NestJS / Node.js (Docker image)" in content
+    assert "Python (Docker image)" in content
+    assert "Spring Boot (Docker image)" in content
+    assert "image Docker" in content
     assert "Render Web Service" in content
+    assert "https://render.com/docs/web-services" in content
     assert '<a id="top-50-github-stars"></a>' in content
     assert "## 🏆 Top 50 GitHub Stars" in content
     assert "## 📂 Top par catégorie" in content

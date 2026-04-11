@@ -87,7 +87,8 @@ def build_hosting_table(items: Sequence[HostingRecommendationLike]) -> str:
     for item in items:
         recommendation = to_hosting_recommendation(item)
         stack = recommendation.stack.replace("|", "\\|")
-        hosting = recommendation.hosting.replace("|", "\\|")
+        hosting_label = recommendation.hosting.replace("|", "\\|")
+        hosting = f"[{hosting_label}]({recommendation.url})"
         notes = recommendation.notes.replace("|", "\\|")
         lines.append(f"| {stack} | {hosting} | {notes} |")
     return "\n".join(lines)
