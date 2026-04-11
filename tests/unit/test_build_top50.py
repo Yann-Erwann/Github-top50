@@ -225,8 +225,7 @@ class TestBuildHostingTable:
         assert lines[0] == "| Stack | Hébergement recommandé | Pourquoi |"
         assert lines[1] == "|---|---|---|"
         assert lines[2] == (
-            "| Next.js | [Vercel](https://vercel.com) | "
-            "Déploiement statique simple |"
+            "| Next.js | [Vercel](https://vercel.com) | Déploiement statique simple |"
         )
 
     def test_escapes_pipe_characters_in_rendered_fields(self):
