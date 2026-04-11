@@ -9,6 +9,7 @@ from scripts.build_top50 import (
     slugify,
     update_readme,
 )
+
 from github_top50.domain.models import (
     HostingRecommendationDefinition,
     to_hosting_recommendation,
