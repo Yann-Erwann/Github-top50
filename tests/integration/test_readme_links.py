@@ -5,12 +5,19 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
-from github_top50.config import CATEGORIES, END, README_PATH, START
+from github_top50.config import (
+    CATEGORIES,
+    END,
+    HOSTING_RECOMMENDATIONS,
+    README_PATH,
+    START,
+)
 from github_top50.services.readme_builder import build_generated_content
 
 MARKDOWN_LINK_RE = re.compile(r"(?<!\!)\[(?P<label>[^\]]+)\]\((?P<target>[^)]+)\)")
 HEADING_RE = re.compile(r"^#{2,3}\s+(?P<title>.+)$", re.MULTILINE)
 ANCHOR_ID_RE = re.compile(r'<a id="(?P<id>[^"]+)"></a>')
+ALLOWED_EXTERNAL_LINKS = {item.url for item in HOSTING_RECOMMENDATIONS}
 
 
 def _make_repo(
@@ -75,7 +82,7 @@ def _assert_is_github_repository_link(label: str, target: str) -> None:
     assert label == "/".join(path_parts)
 
 
-def test_generated_content_uses_only_internal_anchors_and_github_repo_links():
+def test_generated_content_uses_only_allowed_links():
     categories = CATEGORIES[:2]
     global_items = [_make_repo(name="org/global-repo")]
     category_items = {
@@ -88,7 +95,11 @@ def test_generated_content_uses_only_internal_anchors_and_github_repo_links():
 
     assert links
     for _, target in links:
-        assert target.startswith("#") or target.startswith("https://github.com/")
+        assert (
+            target.startswith("#")
+            or target.startswith("https://github.com/")
+            or target in ALLOWED_EXTERNAL_LINKS
+        )
 
 
 def test_generated_content_repository_links_match_owner_repo_paths():
