@@ -1,0 +1,28 @@
+---
+import HostingGrid from "../components/HostingGrid.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSiteData } from "../data/site-data";
+
+const data = await getSiteData();
+---
+
+<BaseLayout
+  title="Hébergements"
+  description="Matrice d’hébergement recommandée pour les stacks frontend et backend visibles dans le projet."
+  currentPath="/hosting/"
+>
+  <section class="page-hero page-hero-tight">
+    <div>
+      <p class="eyebrow">Hosting matrix</p>
+      <h1>Des recommandations simples pour lancer vite</h1>
+      <p class="page-intro">
+        Cette page synthétise les choix d’hébergement les plus pragmatiques pour des environnements
+        de test, de démo et de validation rapide, sans transformer le site en catalogue d’infra.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <HostingGrid items={data.hosting} />
+  </section>
+</BaseLayout>

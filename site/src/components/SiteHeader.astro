@@ -1,0 +1,36 @@
+---
+import { isCurrentRoute, navigation, withBase } from "../utils/routes";
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = "/" } = Astro.props;
+---
+
+<header class="site-header">
+  <a class="brand" href={withBase("/")}>
+    <span class="brand-mark">GT</span>
+    <span class="brand-copy">
+      <strong>GitHub Top 50</strong>
+      <small>Observatoire stars & hosting</small>
+    </span>
+  </a>
+
+  <nav class="site-nav" aria-label="Navigation principale">
+    {
+      navigation.map((item) => (
+        <a
+          href={withBase(item.href)}
+          class:list={["nav-link", isCurrentRoute(currentPath, item.href) && "is-active"]}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+    Mode sombre
+  </button>
+</header>

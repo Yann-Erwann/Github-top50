@@ -1,0 +1,63 @@
+---
+import type { RepositoryEntry } from "../data/site-data";
+import { formatCompactNumber, formatMovement, formatInteger } from "../utils/format";
+
+interface Props {
+  items: RepositoryEntry[];
+  id?: string;
+  compact?: boolean;
+}
+
+const { items, id, compact = false } = Astro.props;
+---
+
+<div class:list={["repo-list-shell", compact && "is-compact"]}>
+  <div class="repo-list-head" aria-hidden="true">
+    <span>Rank</span>
+    <span>Move</span>
+    <span>Repository</span>
+    <span>Langage</span>
+    <span>Stars</span>
+  </div>
+
+  <div id={id} class="repo-list" data-repo-list>
+    {
+      items.map((item) => {
+        const movement = formatMovement(item.rank, item.previousRank);
+        const [owner, repositoryName] = item.fullName.split("/");
+
+        return (
+          <article
+            class="repo-row"
+            data-repo-item
+            data-name={item.fullName.toLowerCase()}
+            data-search={`${item.fullName} ${item.description ?? ""} ${item.language ?? ""}`.toLowerCase()}
+            data-rank={item.rank}
+            data-stars={item.stargazersCount}
+            data-language={(item.language ?? "mixte").toLowerCase()}
+            data-movement={movement.tone}
+          >
+            <div class="repo-rank">#{formatInteger(item.rank)}</div>
+            <div class:list={["movement-pill", `movement-${movement.tone}`]}>
+              {movement.label}
+            </div>
+            <div class="repo-main">
+              <a class="repo-link" href={item.htmlUrl}>
+                <span class="repo-owner">{owner}</span>
+                <span class="repo-separator">/</span>
+                <span class="repo-name">{repositoryName}</span>
+              </a>
+              <p class="repo-description">{item.description ?? "Aucune description fournie."}</p>
+            </div>
+            <div class="repo-language">
+              <span class="language-pill">{item.language ?? "Mixte"}</span>
+            </div>
+            <div class="repo-stars" aria-label={`${formatInteger(item.stargazersCount)} étoiles`}>
+              {compact ? formatCompactNumber(item.stargazersCount) : formatInteger(item.stargazersCount)}
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+</div>
