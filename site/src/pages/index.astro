@@ -1,0 +1,118 @@
+---
+import HostingGrid from "../components/HostingGrid.astro";
+import RepositoryList from "../components/RepositoryList.astro";
+import StatCard from "../components/StatCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSiteData } from "../data/site-data";
+import { formatCompactNumber, formatSnapshotDate } from "../utils/format";
+import { withBase } from "../utils/routes";
+
+const data = await getSiteData();
+const highlightedCategories = data.categories.slice(0, 6);
+---
+
+<BaseLayout
+  title="Vue d’ensemble"
+  description="Vue premium du Top 50 GitHub Stars, des catégories techniques et des recommandations d’hébergement."
+  currentPath="/"
+>
+  <section class="hero-panel">
+    <div class="hero-copy">
+      <p class="eyebrow">Snapshot software signal</p>
+      <h1>Un observatoire visuel pour lire les top repositories GitHub et les stacks d’hébergement en un coup d’œil.</h1>
+      <p class="hero-description">
+        Une interface statique, rapide et éditorialisée pour suivre les signaux qui comptent:
+        stars, mouvements de ranking, catégories techniques et recommandations
+        d’hébergement pragmatiques.
+      </p>
+      <div class="hero-actions">
+        <a class="button-primary" href={withBase("/top/")}>Explorer le top 50</a>
+        <a class="button-secondary" href={withBase("/hosting/")}>Voir les hébergements</a>
+      </div>
+    </div>
+
+    <div class="hero-glance card-surface">
+      <p class="card-kicker">Dernier snapshot</p>
+      <p class="glance-date">{formatSnapshotDate(data.snapshot.capturedAt)}</p>
+      <p class="glance-copy">{data.global.subtitle}</p>
+      <div class="glance-stack">
+        <span>{data.stats.repositoryCount} repos globaux</span>
+        <span>{data.stats.categoryCount} catégories</span>
+        <span>{data.stats.hostingCount} recommandations hosting</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <p class="eyebrow">Signal du jour</p>
+      <h2>Métriques clés du snapshot</h2>
+    </div>
+    <div class="metric-grid">
+      <StatCard
+        label="Stars cumulées"
+        value={formatCompactNumber(data.stats.totalStars)}
+        detail="Total des étoiles cumulées sur le top global."
+      />
+      <StatCard
+        label="Langage dominant"
+        value={data.stats.topLanguage.name}
+        detail={`${data.stats.topLanguage.repositoryCount} repositories visibles dans le top.`}
+      />
+      <StatCard
+        label="Snapshot"
+        value={formatSnapshotDate(data.snapshot.capturedAt)}
+        detail="Mise à jour à partir de la donnée versionnée du repo."
+      />
+      <StatCard
+        label="Focus hébergement"
+        value={`${data.hosting.length} stacks`}
+        detail="Recommandations rapides pour tests, démos et validation."
+      />
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <p class="eyebrow">Top highlights</p>
+      <h2>Repositories les plus visibles du moment</h2>
+    </div>
+    <RepositoryList items={data.global.highlights} compact={true} />
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <p class="eyebrow">Panorama</p>
+      <h2>Catégories à explorer</h2>
+    </div>
+    <div class="category-preview-grid">
+      {
+        highlightedCategories.map((category) => (
+          <article class:list={["category-preview-card", `accent-${category.accent ?? "aurora"}`]}>
+            <p class="category-preview-tag">{category.tag}</p>
+            <h3>{category.title}</h3>
+            <p>{category.description}</p>
+            <div class="category-preview-meta">
+              <span>{category.items.length} repos</span>
+              <span>{category.items[0]?.language ?? "Mixte"}</span>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+    <div class="section-actions">
+      <a class="button-secondary" href={withBase("/categories/")}>Parcourir toutes les catégories</a>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <p class="eyebrow">Deployment fit</p>
+      <h2>Recommandations d’hébergement</h2>
+    </div>
+    <HostingGrid items={data.hosting.slice(0, 4)} />
+    <div class="section-actions">
+      <a class="button-secondary" href={withBase("/hosting/")}>Voir la matrice complète</a>
+    </div>
+  </section>
+</BaseLayout>
