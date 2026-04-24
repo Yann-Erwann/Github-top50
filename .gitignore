@@ -35,3 +35,10 @@ htmlcov/
 # Local tooling caches
 .pip-audit-cache/
 .uv-cache/
+
+# Frontend site
+site/node_modules/
+site/dist/
+site/.astro/
+site/.uv-cache/
+site/public/data/site-data.json
