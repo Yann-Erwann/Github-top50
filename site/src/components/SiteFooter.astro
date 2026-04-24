@@ -1,0 +1,19 @@
+---
+import { withBase } from "../utils/routes";
+---
+
+<footer class="site-footer">
+  <div>
+    <p class="footer-title">GitHub Top 50 Observatory</p>
+    <p class="footer-copy">
+      Données issues du snapshot versionné du repository et rendues pour GitHub Pages.
+    </p>
+  </div>
+
+  <div class="footer-links">
+    <a href={withBase("/top/")}>Top stars</a>
+    <a href={withBase("/categories/")}>Catégories</a>
+    <a href={withBase("/hosting/")}>Hébergements</a>
+    <a href="https://github.com/Yann-Erwann/Github-top50">Repository</a>
+  </div>
+</footer>
