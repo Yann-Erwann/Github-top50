@@ -1,0 +1,143 @@
+name: Auto Merge Bot Pull Requests
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: Pull request number to evaluate.
+        required: true
+  workflow_run:
+    workflows:
+      - CI
+      - Security
+      - CodeQL
+      - Dependency Review
+    types:
+      - completed
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-bot-pr-${{ github.event.workflow_run.head_sha || github.event.inputs['pr-number'] }}
+  cancel-in-progress: false
+
+jobs:
+  auto-merge:
+    name: Auto-merge eligible bot PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Merge after required bot validations pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          INPUT_PR_NUMBER: ${{ github.event.inputs['pr-number'] }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            pr_number="$INPUT_PR_NUMBER"
+            pr_json="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+            head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
+          else
+            if [ -z "${HEAD_SHA:-}" ]; then
+              echo "No workflow_run head SHA available; nothing to evaluate."
+              exit 0
+            fi
+
+            pr_number="$(
+              gh api "repos/${REPOSITORY}/commits/${HEAD_SHA}/pulls" \
+                -H "Accept: application/vnd.github+json" \
+                --jq 'map(select(.state == "open")) | first | .number // ""'
+            )"
+
+            if [ -z "$pr_number" ]; then
+              echo "No open pull request is associated with ${HEAD_SHA}."
+              exit 0
+            fi
+
+            pr_json="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+            head_sha="$HEAD_SHA"
+          fi
+
+          author="$(jq -r '.user.login' <<< "$pr_json")"
+          head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
+          title="$(jq -r '.title' <<< "$pr_json")"
+          draft="$(jq -r '.draft' <<< "$pr_json")"
+
+          if [ "$draft" = "true" ]; then
+            echo "Pull request #${pr_number} is a draft; skipping."
+            exit 0
+          fi
+
+          if [ "$author" = "dependabot[bot]" ]; then
+            required_workflows=("CI" "Security" "CodeQL" "Dependency Review")
+          elif [ "$author" = "github-actions[bot]" ] && [ "$head_ref" = "chore/update-readme-top50" ]; then
+            required_workflows=("CI" "Security" "CodeQL")
+          else
+            echo "Pull request #${pr_number} by ${author} is not eligible for bot auto-merge."
+            exit 0
+          fi
+
+          runs_json="$(gh api "repos/${REPOSITORY}/actions/runs?head_sha=${head_sha}&per_page=100")"
+
+          for workflow in "${required_workflows[@]}"; do
+            status="$(
+              jq -r --arg name "$workflow" \
+                '([.workflow_runs[] | select(.name == $name)] | sort_by(.created_at) | last // {}) | .status // "missing"' \
+                <<< "$runs_json"
+            )"
+            conclusion="$(
+              jq -r --arg name "$workflow" \
+                '([.workflow_runs[] | select(.name == $name)] | sort_by(.created_at) | last // {}) | .conclusion // "missing"' \
+                <<< "$runs_json"
+            )"
+
+            if [ "$status" = "missing" ]; then
+              echo "Workflow ${workflow} has not run for ${head_sha}; waiting for a later workflow_run event."
+              exit 0
+            fi
+
+            if [ "$status" != "completed" ]; then
+              echo "Workflow ${workflow} is ${status}; waiting."
+              exit 0
+            fi
+
+            if [ "$conclusion" != "success" ]; then
+              echo "::warning::Workflow ${workflow} concluded with ${conclusion}; skipping auto-merge."
+              exit 0
+            fi
+          done
+
+          for attempt in 1 2 3 4 5; do
+            pr_json="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+            mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
+            mergeable_state="$(jq -r '.mergeable_state' <<< "$pr_json")"
+
+            if [ "$mergeable" != "null" ]; then
+              break
+            fi
+
+            echo "GitHub is still calculating mergeability for #${pr_number}; retry ${attempt}/5."
+            sleep 3
+          done
+
+          if [ "$mergeable" != "true" ] || [ "$mergeable_state" != "clean" ]; then
+            echo "::warning::Pull request #${pr_number} is not cleanly mergeable: mergeable=${mergeable}, state=${mergeable_state}."
+            exit 0
+          fi
+
+          echo "Merging eligible bot pull request #${pr_number}: ${title}"
+          gh pr merge "$pr_number" \
+            --repo "$REPOSITORY" \
+            --squash \
+            --delete-branch \
+            --subject "$title" \
+            --body "Automerged after required bot validation workflows completed successfully."

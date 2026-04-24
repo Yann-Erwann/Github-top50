@@ -1,0 +1,25 @@
+---
+import type { HostingRecommendation } from "../data/site-data";
+
+interface Props {
+  items: HostingRecommendation[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="hosting-grid">
+  {
+    items.map((item) => (
+      <article class="hosting-card">
+        <p class="hosting-fit">{item.fit ?? "Déploiement rapide"}</p>
+        <h3>{item.stack}</h3>
+        <p class="hosting-provider">{item.hosting}</p>
+        <p class="hosting-notes">{item.notes}</p>
+        <a class="hosting-link" href={item.url}>
+          Voir la documentation
+        </a>
+      </article>
+    ))
+  }
+</div>

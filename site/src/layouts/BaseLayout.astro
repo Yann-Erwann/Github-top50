@@ -1,0 +1,83 @@
+---
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  currentPath?: string;
+}
+
+const {
+  title = "GitHub Top 50 Observatory",
+  description = "Un site statique premium pour explorer les repositories GitHub les plus suivis et les recommandations d’hébergement associées.",
+  currentPath = "/",
+} = Astro.props;
+
+const documentTitle = `${title} · GitHub Top 50`;
+const siteUrl = Astro.site ?? new URL("https://yann-erwann.github.io/Github-top50/");
+const canonical = new URL(Astro.url.pathname, siteUrl);
+const themeBootScript = `
+(() => {
+  const storageKey = "github-top50-theme";
+  const stored = window.localStorage.getItem(storageKey);
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const theme = stored === "light" || stored === "dark" ? stored : systemTheme;
+  document.documentElement.dataset.theme = theme;
+})();
+`;
+const themeToggleScript = `
+(() => {
+  const storageKey = "github-top50-theme";
+  const applyTheme = (theme) => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(theme === "dark"));
+      button.textContent = theme === "dark" ? "Mode clair" : "Mode sombre";
+    });
+  };
+
+  applyTheme(document.documentElement.dataset.theme || "light");
+
+  document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextTheme =
+        document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      window.localStorage.setItem(storageKey, nextTheme);
+      applyTheme(nextTheme);
+    });
+  });
+})();
+`;
+---
+
+<!doctype html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#081223" />
+    <link rel="canonical" href={canonical.toString()} />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <title>{documentTitle}</title>
+    <script is:inline set:html={themeBootScript}></script>
+  </head>
+  <body>
+    <div class="site-background" aria-hidden="true">
+      <div class="site-orb site-orb-a"></div>
+      <div class="site-orb site-orb-b"></div>
+      <div class="site-grid"></div>
+    </div>
+    <div class="site-shell">
+      <a class="skip-link" href="#content">Aller au contenu</a>
+      <SiteHeader currentPath={currentPath} />
+      <main id="content" class="page-shell">
+        <slot />
+      </main>
+      <SiteFooter />
+    </div>
+    <script is:inline set:html={themeToggleScript}></script>
+  </body>
+</html>

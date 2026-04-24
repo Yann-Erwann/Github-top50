@@ -18,6 +18,8 @@ The project has two execution modes:
 - `src/github_top50/services/readme_builder.py`: markdown rendering and README replacement
 - `src/github_top50/utils/slug.py`: heading-to-anchor normalization
 - `scripts/build_top50.py`: backward-compatible wrapper around the packaged implementation
+- `scripts/export_site_data.py`: consolidates the latest snapshot and static config into `site/public/data/site-data.json` for the GitHub Pages frontend
+- `site/`: Astro static frontend rendered for GitHub Pages
 
 ## Execution Flow
 
@@ -26,6 +28,7 @@ The project has two execution modes:
 3. The README builder renders the hosting section, markdown tables, a table of contents, and category sections.
 4. The generated block replaces the content between `<!-- TOP50:START -->` and `<!-- TOP50:END -->`.
 5. In automation, GitHub Actions opens or updates a pull request instead of pushing directly to `main`.
+6. The site export script materializes a stable JSON payload under `site/public/data/site-data.json` before the Astro build consumes it.
 
 ## Boundaries
 
@@ -39,6 +42,7 @@ The project has two execution modes:
 - CI validates linting, formatting, tests, and coverage.
 - Security checks run dependency audit and Bandit analysis.
 - The scheduled README update workflow refreshes content and proposes the change through a PR.
+- The Pages deployment workflow exports consolidated JSON data first, then builds and deploys `site/` when that frontend is present in the repository.
 - Tagged releases create GitHub releases with generated notes.
 
 ## Failure Modes
