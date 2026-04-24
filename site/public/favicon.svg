@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="GitHub Top 50">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b8cff" />
+      <stop offset="100%" stop-color="#00b894" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#081223" />
+  <path d="M26 34h76v12H70v48H58V46H26V34z" fill="url(#grad)" />
+  <circle cx="92" cy="92" r="12" fill="url(#grad)" />
+</svg>

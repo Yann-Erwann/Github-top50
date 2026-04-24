@@ -19,6 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -32,6 +33,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ secrets.PR_AUTOMATION_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Prepare automation branch
         run: |
@@ -66,7 +68,7 @@ jobs:
 
       - name: Generate README section
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN || secrets.GITHUB_TOKEN }}
         run: python -m uv run --frozen python scripts/build_top50.py
 
       - name: Validate generated README
@@ -74,7 +76,8 @@ jobs:
 
       - name: Open pull request if changed
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_AUTOMATION_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
@@ -96,6 +99,19 @@ jobs:
               | head -n1
           }
 
+          trigger_validation_workflows() {
+            if [ -n "${PR_AUTOMATION_TOKEN:-}" ]; then
+              echo "PR_AUTOMATION_TOKEN is configured; pull_request workflows will trigger from the push."
+              return 0
+            fi
+
+            echo "Using GITHUB_TOKEN fallback; dispatching validation workflows explicitly."
+            for workflow in ci.yml security.yml codeql.yml; do
+              gh workflow run "$workflow" --ref "$branch" \
+                || echo "::warning::Unable to dispatch ${workflow} for ${branch}."
+            done
+          }
+
           git add README.md data/top50
           git commit -m "$title"
           git push origin "HEAD:${branch}"
@@ -104,6 +120,7 @@ jobs:
           if [ -n "$existing_pr" ]; then
             gh pr edit "$existing_pr" --title "$title" --body "$pr_body"
             echo "Updated existing pull request #$existing_pr for ${branch}."
+            trigger_validation_workflows
             exit 0
           fi
 
@@ -123,6 +140,7 @@ jobs:
             if [ -n "$existing_pr" ]; then
               gh pr edit "$existing_pr" --title "$title" --body "$pr_body"
               echo "Pull request #$existing_pr already existed after push; updated instead."
+              trigger_validation_workflows
               exit 0
             fi
 
@@ -131,3 +149,4 @@ jobs:
           fi
 
           echo "$create_output"
+          trigger_validation_workflows

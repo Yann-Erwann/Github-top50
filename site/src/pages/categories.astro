@@ -1,0 +1,51 @@
+---
+import RepositoryList from "../components/RepositoryList.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSiteData } from "../data/site-data";
+
+const data = await getSiteData();
+---
+
+<BaseLayout
+  title="Catégories"
+  description="Top repositories par catégorie technique, avec navigation rapide et repères éditoriaux."
+  currentPath="/categories/"
+>
+  <section class="page-hero page-hero-tight">
+    <div>
+      <p class="eyebrow">Category map</p>
+      <h1>Un panorama par domaines techniques</h1>
+      <p class="page-intro">
+        Chaque catégorie expose son top dédié, avec un angle de lecture lisible pour détecter les
+        signaux forts par stack, pratique ou discipline d’ingénierie.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <nav class="category-rail" aria-label="Accès rapide aux catégories">
+      {
+        data.categories.map((category) => (
+          <a class:list={["category-chip", `accent-${category.accent ?? "aurora"}`]} href={`#${category.tag.toLowerCase()}`}>
+            {category.title}
+          </a>
+        ))
+      }
+    </nav>
+  </section>
+
+  <section class="category-sections">
+    {
+      data.categories.map((category) => (
+        <article id={category.tag.toLowerCase()} class="category-section card-surface">
+          <div class="section-heading">
+            <p class="eyebrow">{category.tag}</p>
+            <h2>{category.title}</h2>
+            <p>{category.description}</p>
+          </div>
+          <RepositoryList items={category.items} compact={true} />
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>
