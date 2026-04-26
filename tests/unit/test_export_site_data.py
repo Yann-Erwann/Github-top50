@@ -191,6 +191,34 @@ def test_build_site_payload_raises_when_snapshot_tags_drift(export_config):
         exporter.build_site_payload(snapshot)
 
 
+def test_build_site_payload_rejects_unsafe_repository_urls(export_config):
+    snapshot = _make_snapshot()
+    snapshot["global"]["items"][0]["html_url"] = "javascript:alert(1)"
+
+    with pytest.raises(ValueError, match="Unsafe GitHub repository URL"):
+        exporter.build_site_payload(snapshot)
+
+
+def test_build_site_payload_rejects_unapproved_hosting_urls(
+    export_config, monkeypatch
+):
+    monkeypatch.setattr(
+        exporter,
+        "HOSTING_RECOMMENDATIONS",
+        (
+            HostingRecommendationDefinition(
+                stack="React / Next.js",
+                hosting="Unexpected host",
+                url="https://example.com/docs",
+                notes="Unexpected documentation host.",
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Unsafe hosting documentation URL"):
+        exporter.build_site_payload(_make_snapshot())
+
+
 def test_export_site_data_writes_json_and_creates_parent_directory(
     export_config, tmp_path
 ):
