@@ -9,6 +9,7 @@ from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 SRC_PATH = Path(__file__).resolve().parents[1] / "src"
 if str(SRC_PATH) not in sys.path:
@@ -24,6 +25,8 @@ from github_top50.config import (  # noqa: E402
 )
 
 DEFAULT_OUTPUT_PATH = Path("site/public/data/site-data.json")
+ALLOWED_REPOSITORY_HOSTS = frozenset({"github.com"})
+ALLOWED_HOSTING_HOSTS = frozenset({"render.com", "vercel.com"})
 
 CATEGORY_ACCENTS = (
     "aurora",
@@ -33,6 +36,29 @@ CATEGORY_ACCENTS = (
     "ember",
     "signal",
 )
+
+
+def is_allowed_host(host: str, allowed_hosts: frozenset[str]) -> bool:
+    """Return whether a host matches the configured allowlist."""
+    return any(
+        host == allowed or host.endswith(f".{allowed}") for allowed in allowed_hosts
+    )
+
+
+def require_https_url(
+    value: object,
+    *,
+    allowed_hosts: frozenset[str],
+    label: str,
+) -> str:
+    """Validate external URLs before they are written into the static site data."""
+    url = str(value)
+    parsed = urlparse(url)
+
+    if parsed.scheme != "https" or not is_allowed_host(parsed.netloc, allowed_hosts):
+        raise ValueError(f"Unsafe {label} URL: {url}")
+
+    return url
 
 
 def build_category_description(title: str) -> str:
@@ -71,7 +97,11 @@ def to_camel_repository(item: Mapping[str, Any], fallback_rank: int) -> dict[str
         "fullName": full_name,
         "owner": owner,
         "name": name or full_name,
-        "htmlUrl": item["html_url"],
+        "htmlUrl": require_https_url(
+            item["html_url"],
+            allowed_hosts=ALLOWED_REPOSITORY_HOSTS,
+            label="GitHub repository",
+        ),
         "stargazersCount": item["stargazers_count"],
         "language": item.get("language"),
         "description": item.get("description"),
@@ -182,7 +212,11 @@ def build_site_payload(
         {
             "stack": recommendation.stack,
             "hosting": recommendation.hosting,
-            "url": recommendation.url,
+            "url": require_https_url(
+                recommendation.url,
+                allowed_hosts=ALLOWED_HOSTING_HOSTS,
+                label="hosting documentation",
+            ),
             "notes": recommendation.notes,
             "fit": build_hosting_fit(recommendation.stack),
         }
