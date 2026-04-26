@@ -41,8 +41,8 @@ jobs:
 
           branch="chore/update-readme-top50"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Yann-Erwann Le Calvez"
+          git config user.email "Yann-Erwann@users.noreply.github.com"
 
           if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
             git fetch origin "$branch"
