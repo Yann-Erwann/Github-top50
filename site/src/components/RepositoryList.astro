@@ -31,7 +31,6 @@ const { items, id, compact = false } = Astro.props;
             class="repo-row"
             data-repo-item
             data-name={item.fullName.toLowerCase()}
-            data-search={`${item.fullName} ${item.description ?? ""} ${item.language ?? ""}`.toLowerCase()}
             data-rank={item.rank}
             data-stars={item.stargazersCount}
             data-language={(item.language ?? "mixte").toLowerCase()}

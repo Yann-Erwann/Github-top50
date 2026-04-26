@@ -10,7 +10,7 @@ const languages = data.stats.languages.map((entry) => entry.name);
 
 <BaseLayout
   title="Top stars"
-  description="Le top 50 GitHub Stars avec recherche, filtres et tri."
+  description="Le top 50 GitHub Stars avec filtres et tri."
   currentPath="/top/"
 >
   <section class="page-hero page-hero-tight">
@@ -18,7 +18,7 @@ const languages = data.stats.languages.map((entry) => entry.name);
       <p class="eyebrow">Top 50 global</p>
       <h1>Lecture filtrable du classement principal</h1>
       <p class="page-intro">
-        Explore le classement principal, trie par stars ou mouvement, et isole rapidement les stacks
+        Explore le classement principal, filtre par langage ou mouvement, et trie les repositories
         qui montent le plus fort dans le snapshot du {formatSnapshotDate(data.snapshot.capturedAt)}.
       </p>
     </div>
@@ -31,10 +31,6 @@ const languages = data.stats.languages.map((entry) => entry.name);
 
   <section class="section-block">
     <form class="filter-panel" data-top-form>
-      <label>
-        Recherche
-        <input type="search" name="search" placeholder="Repo, owner, langage..." />
-      </label>
       <label>
         Langage
         <select name="language">
