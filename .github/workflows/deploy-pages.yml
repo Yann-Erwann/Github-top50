@@ -23,7 +23,6 @@ permissions:
 
 jobs:
   build:
-    if: ${{ hashFiles('site/package-lock.json') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -51,9 +50,9 @@ jobs:
           --output-path site/public/data/site-data.json
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: site/package-lock.json
 
@@ -66,7 +65,9 @@ jobs:
         run: npm run build
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
+        with:
+          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -74,7 +75,6 @@ jobs:
           path: site/dist
 
   deploy:
-    if: ${{ hashFiles('site/package-lock.json') != '' }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
