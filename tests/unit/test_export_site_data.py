@@ -199,9 +199,7 @@ def test_build_site_payload_rejects_unsafe_repository_urls(export_config):
         exporter.build_site_payload(snapshot)
 
 
-def test_build_site_payload_rejects_unapproved_hosting_urls(
-    export_config, monkeypatch
-):
+def test_build_site_payload_rejects_unapproved_hosting_urls(export_config, monkeypatch):
     monkeypatch.setattr(
         exporter,
         "HOSTING_RECOMMENDATIONS",

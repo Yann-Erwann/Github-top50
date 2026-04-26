@@ -23,7 +23,6 @@ permissions:
 
 jobs:
   build:
-    if: ${{ hashFiles('site/package-lock.json') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -53,7 +52,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: site/package-lock.json
 
@@ -74,7 +73,6 @@ jobs:
           path: site/dist
 
   deploy:
-    if: ${{ hashFiles('site/package-lock.json') != '' }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
