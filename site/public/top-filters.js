@@ -42,16 +42,14 @@
   };
 
   const update = () => {
-    const search = getFormValue("search").toLowerCase().trim();
     const language = getFormValue("language");
     const movement = getFormValue("movement");
     const sort = getFormValue("sort", "rank");
 
     const visible = items.filter((item) => {
-      const matchesSearch = !search || String(item.dataset.search || "").includes(search);
       const matchesLanguage = !language || item.dataset.language === language;
       const matchesMovement = !movement || item.dataset.movement === movement;
-      const matches = matchesSearch && matchesLanguage && matchesMovement;
+      const matches = matchesLanguage && matchesMovement;
 
       item.hidden = !matches;
       return matches;
