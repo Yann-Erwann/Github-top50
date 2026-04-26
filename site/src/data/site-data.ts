@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 export interface RepositoryEntry {
   id?: number;
@@ -63,7 +64,9 @@ export interface SiteData {
   stats: StatsSummary;
 }
 
-const DATA_FILE = new URL("../../public/data/site-data.json", import.meta.url);
+const DATA_FILE = resolve(process.cwd(), "public/data/site-data.json");
+const GITHUB_HOSTS = ["github.com"];
+const HOSTING_DOC_HOSTS = ["render.com", "vercel.com"];
 
 let cachedSiteData: Promise<SiteData> | undefined;
 
@@ -78,6 +81,32 @@ function toString(value: unknown, fallback = ""): string {
 function toNullableString(value: unknown): string | null {
   const normalized = toString(value);
   return normalized.length > 0 ? normalized : null;
+}
+
+function isAllowedHost(host: string, allowedHosts: string[]): boolean {
+  return allowedHosts.some(
+    (allowedHost) => host === allowedHost || host.endsWith(`.${allowedHost}`)
+  );
+}
+
+function toSafeHttpsUrl(
+  value: unknown,
+  allowedHosts: string[],
+  fallback = "#"
+): string {
+  const candidate = toString(value, fallback);
+
+  try {
+    const url = new URL(candidate);
+
+    if (url.protocol !== "https:" || !isAllowedHost(url.hostname, allowedHosts)) {
+      return fallback;
+    }
+
+    return url.toString();
+  } catch {
+    return fallback;
+  }
 }
 
 function toNumber(value: unknown, fallback = 0): number {
@@ -107,7 +136,7 @@ function normalizeRepository(
       record.fullName ?? record.full_name,
       `unknown/repository-${fallbackRank}`
     ),
-    htmlUrl: toString(record.htmlUrl ?? record.html_url, "#"),
+    htmlUrl: toSafeHttpsUrl(record.htmlUrl ?? record.html_url, GITHUB_HOSTS),
     stargazersCount: toInteger(
       record.stargazersCount ?? record.stargazers_count
     ),
@@ -176,7 +205,7 @@ function normalizeHosting(value: unknown): HostingRecommendation[] {
     return {
       stack: toString(record.stack, `Stack ${index + 1}`),
       hosting: toString(record.hosting, "GitHub Pages"),
-      url: toString(record.url, "#"),
+      url: toSafeHttpsUrl(record.url, HOSTING_DOC_HOSTS),
       notes: toString(record.notes, "Aucune recommandation disponible."),
       fit: toNullableString(record.fit)
     };

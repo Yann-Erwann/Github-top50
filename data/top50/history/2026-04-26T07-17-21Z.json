@@ -1,12 +1,12 @@
 {
-  "captured_at": "2026-04-26T07:28:23Z",
+  "captured_at": "2026-04-26T07:17:21Z",
   "global": {
     "items": [
       {
         "id": 132750724,
         "full_name": "codecrafters-io/build-your-own-x",
         "html_url": "https://github.com/codecrafters-io/build-your-own-x",
-        "stargazers_count": 496225,
+        "stargazers_count": 496218,
         "language": "Markdown",
         "description": "Master programming by recreating your favorite technologies from scratch.",
         "rank": 1
@@ -15,7 +15,7 @@
         "id": 21737465,
         "full_name": "sindresorhus/awesome",
         "html_url": "https://github.com/sindresorhus/awesome",
-        "stargazers_count": 459067,
+        "stargazers_count": 459062,
         "language": null,
         "description": "😎 Awesome lists about all kinds of interesting topics",
         "rank": 2
@@ -33,7 +33,7 @@
         "id": 54346799,
         "full_name": "public-apis/public-apis",
         "html_url": "https://github.com/public-apis/public-apis",
-        "stargazers_count": 426536,
+        "stargazers_count": 426534,
         "language": "Python",
         "description": "A collective list of free APIs",
         "rank": 4
@@ -42,7 +42,7 @@
         "id": 13491895,
         "full_name": "EbookFoundation/free-programming-books",
         "html_url": "https://github.com/EbookFoundation/free-programming-books",
-        "stargazers_count": 386047,
+        "stargazers_count": 386046,
         "language": "Python",
         "description": ":books: Freely available programming books",
         "rank": 5
@@ -51,7 +51,7 @@
         "id": 1103012935,
         "full_name": "openclaw/openclaw",
         "html_url": "https://github.com/openclaw/openclaw",
-        "stargazers_count": 364054,
+        "stargazers_count": 364046,
         "language": "TypeScript",
         "description": "Your own personal AI assistant. Any OS. Any Platform. The lobster way. 🦞 ",
         "rank": 6
@@ -69,7 +69,7 @@
         "id": 83222441,
         "full_name": "donnemartin/system-design-primer",
         "html_url": "https://github.com/donnemartin/system-design-primer",
-        "stargazers_count": 344405,
+        "stargazers_count": 344404,
         "language": "Python",
         "description": "Learn how to design large-scale systems. Prep for the system design interview.  Includes Anki flashcards.",
         "rank": 8
@@ -78,7 +78,7 @@
         "id": 60493101,
         "full_name": "jwasham/coding-interview-university",
         "html_url": "https://github.com/jwasham/coding-interview-university",
-        "stargazers_count": 342708,
+        "stargazers_count": 342706,
         "language": null,
         "description": "A complete computer science study plan to become a software engineer.",
         "rank": 9
@@ -87,7 +87,7 @@
         "id": 21289110,
         "full_name": "vinta/awesome-python",
         "html_url": "https://github.com/vinta/awesome-python",
-        "stargazers_count": 294420,
+        "stargazers_count": 294417,
         "language": "Python",
         "description": "An opinionated list of Python frameworks, libraries, tools, and resources",
         "rank": 10
@@ -96,7 +96,7 @@
         "id": 36633370,
         "full_name": "awesome-selfhosted/awesome-selfhosted",
         "html_url": "https://github.com/awesome-selfhosted/awesome-selfhosted",
-        "stargazers_count": 288233,
+        "stargazers_count": 288232,
         "language": null,
         "description": "A list of Free Software network services and web applications which can be hosted on your own servers",
         "rank": 11
@@ -114,7 +114,7 @@
         "id": 88011908,
         "full_name": "practical-tutorials/project-based-learning",
         "html_url": "https://github.com/practical-tutorials/project-based-learning",
-        "stargazers_count": 264112,
+        "stargazers_count": 264111,
         "language": null,
         "description": "Curated list of project-based tutorials",
         "rank": 13
@@ -132,7 +132,7 @@
         "id": 2325298,
         "full_name": "torvalds/linux",
         "html_url": "https://github.com/torvalds/linux",
-        "stargazers_count": 230838,
+        "stargazers_count": 230837,
         "language": "C",
         "description": "Linux kernel source tree",
         "rank": 15
@@ -150,7 +150,7 @@
         "id": 138393139,
         "full_name": "trimstray/the-book-of-secret-knowledge",
         "html_url": "https://github.com/trimstray/the-book-of-secret-knowledge",
-        "stargazers_count": 217378,
+        "stargazers_count": 217377,
         "language": null,
         "description": "A collection of inspiring lists, manuals, cheatsheets, blogs, hacks, one-liners, cli/web tools and more.",
         "rank": 17
@@ -168,7 +168,7 @@
         "id": 19415064,
         "full_name": "ossu/computer-science",
         "html_url": "https://github.com/ossu/computer-science",
-        "stargazers_count": 203276,
+        "stargazers_count": 203275,
         "language": "HTML",
         "description": "🎓 Path to a free self-taught education in Computer Science!",
         "rank": 19
@@ -195,7 +195,7 @@
         "id": 1197021090,
         "full_name": "ultraworkers/claw-code",
         "html_url": "https://github.com/ultraworkers/claw-code",
-        "stargazers_count": 188424,
+        "stargazers_count": 188421,
         "language": "Rust",
         "description": "The repo is finally unlocked. enjoy the party! The fastest repo in history to surpass 100K stars ⭐. Join Discord: https://discord.gg/5TUQKqFWd Built in Rust using oh-my-codex.",
         "rank": 22
@@ -213,7 +213,7 @@
         "id": 193215554,
         "full_name": "n8n-io/n8n",
         "html_url": "https://github.com/n8n-io/n8n",
-        "stargazers_count": 185610,
+        "stargazers_count": 185611,
         "language": "TypeScript",
         "description": "Fair-code workflow automation platform with native AI capabilities. Combine visual building with custom code, self-host or cloud, 400+ integrations.",
         "rank": 24
@@ -267,7 +267,7 @@
         "id": 31792824,
         "full_name": "flutter/flutter",
         "html_url": "https://github.com/flutter/flutter",
-        "stargazers_count": 176112,
+        "stargazers_count": 176111,
         "language": "Dart",
         "description": "Flutter makes it easy and fast to build beautiful apps for mobile and beyond",
         "rank": 30
@@ -312,7 +312,7 @@
         "id": 658928958,
         "full_name": "ollama/ollama",
         "html_url": "https://github.com/ollama/ollama",
-        "stargazers_count": 170023,
+        "stargazers_count": 170022,
         "language": "Go",
         "description": "Get up and running with Kimi-K2.5, GLM-5, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models.",
         "rank": 35
@@ -321,7 +321,7 @@
         "id": 1073224795,
         "full_name": "obra/superpowers",
         "html_url": "https://github.com/obra/superpowers",
-        "stargazers_count": 167846,
+        "stargazers_count": 167835,
         "language": "Shell",
         "description": "An agentic skills framework & software development methodology that works.",
         "rank": 36
@@ -330,7 +330,7 @@
         "id": 1136590548,
         "full_name": "affaan-m/everything-claude-code",
         "html_url": "https://github.com/affaan-m/everything-claude-code",
-        "stargazers_count": 167133,
+        "stargazers_count": 167125,
         "language": "JavaScript",
         "description": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
         "rank": 37
@@ -375,7 +375,7 @@
         "id": 808144141,
         "full_name": "DigitalPlatDev/FreeDomain",
         "html_url": "https://github.com/DigitalPlatDev/FreeDomain",
-        "stargazers_count": 158779,
+        "stargazers_count": 158777,
         "language": "HTML",
         "description": "DigitalPlat FreeDomain: Free Domain For Everyone",
         "rank": 42
@@ -384,7 +384,7 @@
         "id": 307260205,
         "full_name": "yt-dlp/yt-dlp",
         "html_url": "https://github.com/yt-dlp/yt-dlp",
-        "stargazers_count": 158633,
+        "stargazers_count": 158630,
         "language": "Python",
         "description": "A feature-rich command-line audio/video downloader",
         "rank": 43
@@ -402,7 +402,7 @@
         "id": 58028038,
         "full_name": "521xueweihan/HelloGitHub",
         "html_url": "https://github.com/521xueweihan/HelloGitHub",
-        "stargazers_count": 153130,
+        "stargazers_count": 153128,
         "language": "Python",
         "description": ":octocat: 分享 GitHub 上有趣、入门级的开源项目。Share interesting, entry-level open source projects on GitHub.",
         "rank": 45
@@ -411,7 +411,7 @@
         "id": 975734319,
         "full_name": "anomalyco/opencode",
         "html_url": "https://github.com/anomalyco/opencode",
-        "stargazers_count": 149630,
+        "stargazers_count": 149624,
         "language": "TypeScript",
         "description": "The open source coding agent.",
         "rank": 46
@@ -447,7 +447,7 @@
         "id": 626805178,
         "full_name": "langgenius/dify",
         "html_url": "https://github.com/langgenius/dify",
-        "stargazers_count": 139180,
+        "stargazers_count": 139178,
         "language": "TypeScript",
         "description": "Production-ready platform for agentic workflow development.",
         "rank": 50
@@ -566,7 +566,7 @@
           "id": 80945428,
           "full_name": "nestjs/nest",
           "html_url": "https://github.com/nestjs/nest",
-          "stargazers_count": 75316,
+          "stargazers_count": 75315,
           "language": "TypeScript",
           "description": "A progressive Node.js framework for building efficient, scalable, and enterprise-grade server-side applications with TypeScript/JavaScript 🚀",
           "rank": 2
@@ -575,7 +575,7 @@
           "id": 572984571,
           "full_name": "twentyhq/twenty",
           "html_url": "https://github.com/twentyhq/twenty",
-          "stargazers_count": 45199,
+          "stargazers_count": 45198,
           "language": "TypeScript",
           "description": "The open alternative to Salesforce, designed for AI.",
           "rank": 3
@@ -652,7 +652,7 @@
           "id": 83222441,
           "full_name": "donnemartin/system-design-primer",
           "html_url": "https://github.com/donnemartin/system-design-primer",
-          "stargazers_count": 344405,
+          "stargazers_count": 344404,
           "language": "Python",
           "description": "Learn how to design large-scale systems. Prep for the system design interview.  Includes Anki flashcards.",
           "rank": 1
@@ -661,7 +661,7 @@
           "id": 21289110,
           "full_name": "vinta/awesome-python",
           "html_url": "https://github.com/vinta/awesome-python",
-          "stargazers_count": 294420,
+          "stargazers_count": 294417,
           "language": "Python",
           "description": "An opinionated list of Python frameworks, libraries, tools, and resources",
           "rank": 2
@@ -697,7 +697,7 @@
           "id": 307260205,
           "full_name": "yt-dlp/yt-dlp",
           "html_url": "https://github.com/yt-dlp/yt-dlp",
-          "stargazers_count": 158633,
+          "stargazers_count": 158630,
           "language": "Python",
           "description": "A feature-rich command-line audio/video downloader",
           "rank": 6
@@ -706,7 +706,7 @@
           "id": 58028038,
           "full_name": "521xueweihan/HelloGitHub",
           "html_url": "https://github.com/521xueweihan/HelloGitHub",
-          "stargazers_count": 153130,
+          "stargazers_count": 153128,
           "language": "Python",
           "description": ":octocat: 分享 GitHub 上有趣、入门级的开源项目。Share interesting, entry-level open source projects on GitHub.",
           "rank": 7
@@ -724,7 +724,7 @@
           "id": 589831718,
           "full_name": "Comfy-Org/ComfyUI",
           "html_url": "https://github.com/Comfy-Org/ComfyUI",
-          "stargazers_count": 110108,
+          "stargazers_count": 110107,
           "language": "Python",
           "description": "The most powerful and modular diffusion model GUI, api and backend with a graph/nodes interface.",
           "rank": 9
@@ -774,7 +774,7 @@
           "id": 29028775,
           "full_name": "facebook/react-native",
           "html_url": "https://github.com/facebook/react-native",
-          "stargazers_count": 125729,
+          "stargazers_count": 125728,
           "language": "C++",
           "description": "A framework for building native applications using React",
           "rank": 4
@@ -783,7 +783,7 @@
           "id": 14098069,
           "full_name": "justjavac/free-programming-books-zh_CN",
           "html_url": "https://github.com/justjavac/free-programming-books-zh_CN",
-          "stargazers_count": 116747,
+          "stargazers_count": 116746,
           "language": null,
           "description": ":books: 免费的计算机编程类中文书籍，欢迎投稿",
           "rank": 5
@@ -842,7 +842,7 @@
           "id": 14098069,
           "full_name": "justjavac/free-programming-books-zh_CN",
           "html_url": "https://github.com/justjavac/free-programming-books-zh_CN",
-          "stargazers_count": 116747,
+          "stargazers_count": 116746,
           "language": null,
           "description": ":books: 免费的计算机编程类中文书籍，欢迎投稿",
           "rank": 1
@@ -955,7 +955,7 @@
           "id": 1197515131,
           "full_name": "VoltAgent/awesome-design-md",
           "html_url": "https://github.com/VoltAgent/awesome-design-md",
-          "stargazers_count": 65590,
+          "stargazers_count": 65584,
           "language": null,
           "description": "A collection of DESIGN.md files inspired by popular brand design systems. Drop one into your project and let coding agents generate a matching UI.",
           "rank": 3
@@ -1507,7 +1507,7 @@
           "id": 138393139,
           "full_name": "trimstray/the-book-of-secret-knowledge",
           "html_url": "https://github.com/trimstray/the-book-of-secret-knowledge",
-          "stargazers_count": 217378,
+          "stargazers_count": 217377,
           "language": null,
           "description": "A collection of inspiring lists, manuals, cheatsheets, blogs, hacks, one-liners, cli/web tools and more.",
           "rank": 1
@@ -1570,7 +1570,7 @@
           "id": 26783295,
           "full_name": "Kong/kong",
           "html_url": "https://github.com/Kong/kong",
-          "stargazers_count": 43261,
+          "stargazers_count": 43260,
           "language": "Lua",
           "description": "🦍 The API and AI Gateway",
           "rank": 8
@@ -1620,7 +1620,7 @@
           "id": 26783295,
           "full_name": "Kong/kong",
           "html_url": "https://github.com/Kong/kong",
-          "stargazers_count": 43261,
+          "stargazers_count": 43260,
           "language": "Lua",
           "description": "🦍 The API and AI Gateway",
           "rank": 3
@@ -1697,7 +1697,7 @@
           "id": 156157055,
           "full_name": "GokuMohandas/Made-With-ML",
           "html_url": "https://github.com/GokuMohandas/Made-With-ML",
-          "stargazers_count": 47413,
+          "stargazers_count": 47412,
           "language": "Jupyter Notebook",
           "description": "Learn how to develop, deploy and iterate on production-grade ML applications.",
           "rank": 1
@@ -1819,7 +1819,7 @@
           "id": 222751131,
           "full_name": "Asabeneh/30-Days-Of-Python",
           "html_url": "https://github.com/Asabeneh/30-Days-Of-Python",
-          "stargazers_count": 61663,
+          "stargazers_count": 61662,
           "language": "Python",
           "description": "The 30 Days of Python programming challenge is a step-by-step guide to learn the Python programming language in 30 days. This challenge may take more than 100 days. Follow your own pace. These videos may help too: https://www.youtube.com/channel/UC7PNRuno1rzYPb1xLa4yktw",
           "rank": 4
@@ -1896,7 +1896,7 @@
           "id": 193215554,
           "full_name": "n8n-io/n8n",
           "html_url": "https://github.com/n8n-io/n8n",
-          "stargazers_count": 185610,
+          "stargazers_count": 185611,
           "language": "TypeScript",
           "description": "Fair-code workflow automation platform with native AI capabilities. Combine visual building with custom code, self-host or cloud, 400+ integrations.",
           "rank": 2
@@ -1905,7 +1905,7 @@
           "id": 307260205,
           "full_name": "yt-dlp/yt-dlp",
           "html_url": "https://github.com/yt-dlp/yt-dlp",
-          "stargazers_count": 158633,
+          "stargazers_count": 158630,
           "language": "Python",
           "description": "A feature-rich command-line audio/video downloader",
           "rank": 3
@@ -1923,7 +1923,7 @@
           "id": 162998479,
           "full_name": "sherlock-project/sherlock",
           "html_url": "https://github.com/sherlock-project/sherlock",
-          "stargazers_count": 82076,
+          "stargazers_count": 82075,
           "language": "Python",
           "description": "Hunt down social media accounts by username across social networks",
           "rank": 5
@@ -1932,7 +1932,7 @@
           "id": 13807606,
           "full_name": "junegunn/fzf",
           "html_url": "https://github.com/junegunn/fzf",
-          "stargazers_count": 79791,
+          "stargazers_count": 79790,
           "language": "Go",
           "description": ":cherry_blossom: A command-line fuzzy finder",
           "rank": 6
@@ -1982,7 +1982,7 @@
           "id": 257485422,
           "full_name": "vitejs/vite",
           "html_url": "https://github.com/vitejs/vite",
-          "stargazers_count": 80233,
+          "stargazers_count": 80232,
           "language": "TypeScript",
           "description": "Next generation frontend tooling. It's fast!",
           "rank": 1
@@ -2077,7 +2077,7 @@
           "id": 132750724,
           "full_name": "codecrafters-io/build-your-own-x",
           "html_url": "https://github.com/codecrafters-io/build-your-own-x",
-          "stargazers_count": 496225,
+          "stargazers_count": 496218,
           "language": "Markdown",
           "description": "Master programming by recreating your favorite technologies from scratch.",
           "rank": 1
@@ -2086,7 +2086,7 @@
           "id": 21737465,
           "full_name": "sindresorhus/awesome",
           "html_url": "https://github.com/sindresorhus/awesome",
-          "stargazers_count": 459067,
+          "stargazers_count": 459062,
           "language": null,
           "description": "😎 Awesome lists about all kinds of interesting topics",
           "rank": 2
@@ -2095,7 +2095,7 @@
           "id": 36633370,
           "full_name": "awesome-selfhosted/awesome-selfhosted",
           "html_url": "https://github.com/awesome-selfhosted/awesome-selfhosted",
-          "stargazers_count": 288233,
+          "stargazers_count": 288232,
           "language": null,
           "description": "A list of Free Software network services and web applications which can be hosted on your own servers",
           "rank": 3
@@ -2104,7 +2104,7 @@
           "id": 138393139,
           "full_name": "trimstray/the-book-of-secret-knowledge",
           "html_url": "https://github.com/trimstray/the-book-of-secret-knowledge",
-          "stargazers_count": 217378,
+          "stargazers_count": 217377,
           "language": null,
           "description": "A collection of inspiring lists, manuals, cheatsheets, blogs, hacks, one-liners, cli/web tools and more.",
           "rank": 4
@@ -2113,7 +2113,7 @@
           "id": 19415064,
           "full_name": "ossu/computer-science",
           "html_url": "https://github.com/ossu/computer-science",
-          "stargazers_count": 203276,
+          "stargazers_count": 203275,
           "language": "HTML",
           "description": "🎓 Path to a free self-taught education in Computer Science!",
           "rank": 5
@@ -2149,7 +2149,7 @@
           "id": 32484381,
           "full_name": "ripienaar/free-for-dev",
           "html_url": "https://github.com/ripienaar/free-for-dev",
-          "stargazers_count": 120907,
+          "stargazers_count": 120906,
           "language": "HTML",
           "description": "A list of SaaS, PaaS and IaaS offerings that have free tiers of interest to devops and infradev",
           "rank": 9
@@ -2208,7 +2208,7 @@
           "id": 94911145,
           "full_name": "facebook/docusaurus",
           "html_url": "https://github.com/facebook/docusaurus",
-          "stargazers_count": 64710,
+          "stargazers_count": 64709,
           "language": "TypeScript",
           "description": "Easy to maintain open source documentation websites.",
           "rank": 5
@@ -2516,7 +2516,7 @@
           "id": 658928958,
           "full_name": "ollama/ollama",
           "html_url": "https://github.com/ollama/ollama",
-          "stargazers_count": 170023,
+          "stargazers_count": 170022,
           "language": "Go",
           "description": "Get up and running with Kimi-K2.5, GLM-5, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models.",
           "rank": 2
@@ -2525,7 +2525,7 @@
           "id": 1136590548,
           "full_name": "affaan-m/everything-claude-code",
           "html_url": "https://github.com/affaan-m/everything-claude-code",
-          "stargazers_count": 167133,
+          "stargazers_count": 167125,
           "language": "JavaScript",
           "description": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
           "rank": 3
@@ -2552,7 +2552,7 @@
           "id": 626805178,
           "full_name": "langgenius/dify",
           "html_url": "https://github.com/langgenius/dify",
-          "stargazers_count": 139180,
+          "stargazers_count": 139179,
           "language": "TypeScript",
           "description": "Production-ready platform for agentic workflow development.",
           "rank": 6
@@ -2579,7 +2579,7 @@
           "id": 1024554267,
           "full_name": "NousResearch/hermes-agent",
           "html_url": "https://github.com/NousResearch/hermes-agent",
-          "stargazers_count": 117145,
+          "stargazers_count": 117133,
           "language": "Python",
           "description": "The agent that grows with you",
           "rank": 9
@@ -2588,7 +2588,7 @@
           "id": 787076358,
           "full_name": "firecrawl/firecrawl",
           "html_url": "https://github.com/firecrawl/firecrawl",
-          "stargazers_count": 112282,
+          "stargazers_count": 112279,
           "language": "TypeScript",
           "description": "🔥 The API to search, scrape, and interact with the web for AI",
           "rank": 10
@@ -2602,7 +2602,7 @@
           "id": 20580498,
           "full_name": "kubernetes/kubernetes",
           "html_url": "https://github.com/kubernetes/kubernetes",
-          "stargazers_count": 121927,
+          "stargazers_count": 121926,
           "language": "Go",
           "description": "Production-Grade Container Scheduling and Management",
           "rank": 1
@@ -2674,7 +2674,7 @@
           "id": 26783295,
           "full_name": "Kong/kong",
           "html_url": "https://github.com/Kong/kong",
-          "stargazers_count": 43261,
+          "stargazers_count": 43260,
           "language": "Lua",
           "description": "🦍 The API and AI Gateway",
           "rank": 9
