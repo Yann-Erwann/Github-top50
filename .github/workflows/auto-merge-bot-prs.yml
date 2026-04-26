@@ -71,6 +71,7 @@ jobs:
           head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
           title="$(jq -r '.title' <<< "$pr_json")"
           draft="$(jq -r '.draft' <<< "$pr_json")"
+          repository_owner="${REPOSITORY%%/*}"
 
           if [ "$draft" = "true" ]; then
             echo "Pull request #${pr_number} is a draft; skipping."
@@ -79,7 +80,8 @@ jobs:
 
           if [ "$author" = "dependabot[bot]" ]; then
             required_workflows=("CI" "Security" "CodeQL" "Dependency Review")
-          elif [ "$author" = "github-actions[bot]" ] && [ "$head_ref" = "chore/update-readme-top50" ]; then
+          elif [ "$head_ref" = "chore/update-readme-top50" ] \
+            && { [ "$author" = "github-actions[bot]" ] || [ "$author" = "$repository_owner" ]; }; then
             required_workflows=("CI" "Security" "CodeQL")
           else
             echo "Pull request #${pr_number} by ${author} is not eligible for bot auto-merge."
