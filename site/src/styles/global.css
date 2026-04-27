@@ -144,8 +144,7 @@ select {
 .site-footer,
 .card-surface,
 .repo-list-shell,
-.category-section,
-.filter-panel {
+.category-section {
   backdrop-filter: blur(16px);
 }
 
@@ -281,8 +280,7 @@ select {
 .category-preview-card,
 .hosting-card,
 .category-section,
-.repo-list-shell,
-.filter-panel {
+.repo-list-shell {
   border: 1px solid var(--surface-border);
   background: var(--bg-elevated);
   box-shadow: var(--surface-shadow);
@@ -475,36 +473,8 @@ select {
     var(--bg-elevated);
 }
 
-.repo-list-shell,
-.filter-panel {
+.repo-list-shell {
   border-radius: var(--radius-lg);
-}
-
-.filter-panel {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 1rem;
-}
-
-.filter-panel label {
-  display: grid;
-  gap: 0.55rem;
-  color: var(--text-soft);
-  font-size: 0.92rem;
-}
-
-.filter-panel input,
-.filter-panel select {
-  width: 100%;
-  min-height: 2.85rem;
-  padding: 0 0.85rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: var(--bg-strong);
-  color: var(--text);
-}
-
-.filter-summary {
-  color: var(--text-soft);
 }
 
 .repo-list-head,
@@ -664,8 +634,7 @@ select {
   .page-hero,
   .metric-grid,
   .category-preview-grid,
-  .hosting-grid,
-  .filter-panel {
+  .hosting-grid {
     grid-template-columns: 1fr;
   }
 
