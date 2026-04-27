@@ -2,24 +2,22 @@
 import RepositoryList from "../components/RepositoryList.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getSiteData } from "../data/site-data";
-import { formatInteger, formatSnapshotDate } from "../utils/format";
+import { formatInteger } from "../utils/format";
 
 const data = await getSiteData();
-const languages = data.stats.languages.map((entry) => entry.name);
 ---
 
 <BaseLayout
   title="Top stars"
-  description="Le top 50 GitHub Stars avec filtres et tri."
+  description="Le top 50 GitHub Stars."
   currentPath="/top/"
 >
   <section class="page-hero page-hero-tight">
     <div>
       <p class="eyebrow">Top 50 global</p>
-      <h1>Lecture filtrable du classement principal</h1>
+      <h1>Classement principal des repositories GitHub</h1>
       <p class="page-intro">
-        Explore le classement principal, filtre par langage ou mouvement, et trie les repositories
-        qui montent le plus fort dans le snapshot du {formatSnapshotDate(data.snapshot.capturedAt)}.
+        Explore le classement principal et repère les repositories les plus visibles du snapshot.
       </p>
     </div>
     <div class="page-hero-side card-surface">
@@ -30,45 +28,6 @@ const languages = data.stats.languages.map((entry) => entry.name);
   </section>
 
   <section class="section-block">
-    <form class="filter-panel" data-top-form>
-      <label>
-        Langage
-        <select name="language">
-          <option value="">Tous</option>
-          {languages.map((language) => <option value={language.toLowerCase()}>{language}</option>)}
-        </select>
-      </label>
-      <label>
-        Mouvement
-        <select name="movement">
-          <option value="">Tous</option>
-          <option value="up">En hausse</option>
-          <option value="new">Nouveaux</option>
-          <option value="steady">Stables</option>
-          <option value="down">En baisse</option>
-        </select>
-      </label>
-      <label>
-        Tri
-        <select name="sort">
-          <option value="rank">Rank</option>
-          <option value="stars">Stars</option>
-          <option value="movement">Mouvement</option>
-          <option value="name">Nom</option>
-        </select>
-      </label>
-    </form>
-
-    <div class="filter-summary">
-      <p data-top-count>{data.global.items.length} résultats sur {data.global.items.length}</p>
-    </div>
-
-    <RepositoryList id="top-repositories" items={data.global.items} />
-
-    <p class="empty-state" data-top-empty hidden>
-      Aucun repository ne correspond aux filtres en cours.
-    </p>
+    <RepositoryList items={data.global.items} />
   </section>
-
-  <script src={`${import.meta.env.BASE_URL}top-filters.js`}></script>
 </BaseLayout>

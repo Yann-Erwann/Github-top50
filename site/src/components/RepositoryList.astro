@@ -20,7 +20,7 @@ const { items, id, compact = false } = Astro.props;
     <span>Stars</span>
   </div>
 
-  <div id={id} class="repo-list" data-repo-list>
+  <div id={id} class="repo-list">
     {
       items.map((item) => {
         const movement = formatMovement(item.rank, item.previousRank);
@@ -29,12 +29,6 @@ const { items, id, compact = false } = Astro.props;
         return (
           <article
             class="repo-row"
-            data-repo-item
-            data-name={item.fullName.toLowerCase()}
-            data-rank={item.rank}
-            data-stars={item.stargazersCount}
-            data-language={(item.language ?? "mixte").toLowerCase()}
-            data-movement={movement.tone}
           >
             <div class="repo-rank">#{formatInteger(item.rank)}</div>
             <div class:list={["movement-pill", `movement-${movement.tone}`]}>
