@@ -28,6 +28,7 @@ concurrency:
 jobs:
   auto-merge:
     name: Auto-merge eligible bot PR
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -42,9 +43,32 @@ jobs:
         run: |
           set -euo pipefail
 
+          gh_api_json() {
+            local endpoint="$1"
+            shift
+            local attempt output wait_time
+
+            for attempt in 1 2 3; do
+              if output="$(gh api "$endpoint" "$@" 2>&1)" && jq -e . >/dev/null 2>&1 <<< "$output"; then
+                printf '%s' "$output"
+                return 0
+              fi
+
+              wait_time=$((attempt * 2))
+              echo "::warning::GitHub API request failed for ${endpoint} on attempt ${attempt}; retrying in ${wait_time}s."
+              printf '%s\n' "$output" | sed -n '1,4p'
+              sleep "$wait_time"
+            done
+
+            return 1
+          }
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             pr_number="$INPUT_PR_NUMBER"
-            pr_json="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+            if ! pr_json="$(gh_api_json "repos/${REPOSITORY}/pulls/${pr_number}")"; then
+              echo "::warning::Unable to fetch pull request #${pr_number}; skipping auto-merge."
+              exit 0
+            fi
             head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
           else
             if [ -z "${HEAD_SHA:-}" ]; then
@@ -52,10 +76,16 @@ jobs:
               exit 0
             fi
 
+            if ! pulls_json="$(
+              gh_api_json "repos/${REPOSITORY}/commits/${HEAD_SHA}/pulls" \
+                -H "Accept: application/vnd.github+json"
+            )"; then
+              echo "::warning::Unable to fetch pull requests for ${HEAD_SHA}; skipping auto-merge."
+              exit 0
+            fi
+
             pr_number="$(
-              gh api "repos/${REPOSITORY}/commits/${HEAD_SHA}/pulls" \
-                -H "Accept: application/vnd.github+json" \
-                --jq 'map(select(.state == "open")) | first | .number // ""'
+              jq -r 'map(select(.state == "open")) | first | .number // ""' <<< "$pulls_json"
             )"
 
             if [ -z "$pr_number" ]; then
@@ -63,7 +93,10 @@ jobs:
               exit 0
             fi
 
-            pr_json="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+            if ! pr_json="$(gh_api_json "repos/${REPOSITORY}/pulls/${pr_number}")"; then
+              echo "::warning::Unable to fetch pull request #${pr_number}; skipping auto-merge."
+              exit 0
+            fi
             head_sha="$HEAD_SHA"
           fi
 
@@ -88,7 +121,10 @@ jobs:
             exit 0
           fi
 
-          runs_json="$(gh api "repos/${REPOSITORY}/actions/runs?head_sha=${head_sha}&per_page=100")"
+          if ! runs_json="$(gh_api_json "repos/${REPOSITORY}/actions/runs?head_sha=${head_sha}&per_page=100")"; then
+            echo "::warning::Unable to fetch workflow runs for ${head_sha}; skipping auto-merge."
+            exit 0
+          fi
 
           for workflow in "${required_workflows[@]}"; do
             status="$(
@@ -119,7 +155,10 @@ jobs:
           done
 
           for attempt in 1 2 3 4 5; do
-            pr_json="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+            if ! pr_json="$(gh_api_json "repos/${REPOSITORY}/pulls/${pr_number}")"; then
+              echo "::warning::Unable to refresh pull request #${pr_number}; skipping auto-merge."
+              exit 0
+            fi
             mergeable="$(jq -r '.mergeable' <<< "$pr_json")"
             mergeable_state="$(jq -r '.mergeable_state' <<< "$pr_json")"
 
@@ -137,9 +176,19 @@ jobs:
           fi
 
           echo "Merging eligible bot pull request #${pr_number}: ${title}"
-          gh pr merge "$pr_number" \
-            --repo "$REPOSITORY" \
-            --squash \
-            --delete-branch \
-            --subject "$title" \
-            --body "Automerged after required bot validation workflows completed successfully."
+          for attempt in 1 2 3; do
+            if gh pr merge "$pr_number" \
+              --repo "$REPOSITORY" \
+              --squash \
+              --delete-branch \
+              --subject "$title" \
+              --body "Automerged after required bot validation workflows completed successfully."; then
+              exit 0
+            fi
+
+            echo "::warning::Auto-merge attempt ${attempt}/3 failed for pull request #${pr_number}."
+            sleep $((attempt * 2))
+          done
+
+          echo "::error::Unable to auto-merge pull request #${pr_number} after 3 attempts."
+          exit 1
