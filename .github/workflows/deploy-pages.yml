@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-reports
-          path: site/.lighthouseci
+          path: site/lighthouse-reports
           if-no-files-found: ignore
 
       - name: Configure Pages

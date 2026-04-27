@@ -41,5 +41,6 @@ site/node_modules/
 site/dist/
 site/.astro/
 site/.lighthouseci/
+site/lighthouse-reports/
 site/.uv-cache/
 site/public/data/site-data.json
