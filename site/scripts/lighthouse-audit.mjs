@@ -153,6 +153,20 @@ function reportNameForUrl(url, profile) {
 
 async function runLighthouse(url, profile) {
   const outputPath = join(REPORT_DIR, `${reportNameForUrl(url, profile.id)}.json`);
+
+  await runLighthouseCli(url, profile, outputPath);
+
+  return JSON.parse(await readFile(outputPath, "utf8"));
+}
+
+async function warmUpLighthouse(url, profile) {
+  const outputPath = join(REPORT_DIR, `.warmup-${profile.id}.json`);
+
+  await runLighthouseCli(url, profile, outputPath);
+  await rm(outputPath, { force: true });
+}
+
+async function runLighthouseCli(url, profile, outputPath) {
   const lighthouseCli = join(SITE_DIR, "node_modules", "lighthouse", "cli", "index.js");
 
   await new Promise((resolve, reject) => {
@@ -184,8 +198,6 @@ async function runLighthouse(url, profile) {
       reject(new Error(`Lighthouse failed for ${url} with exit code ${code}`));
     });
   });
-
-  return JSON.parse(await readFile(outputPath, "utf8"));
 }
 
 function assertPerfectScores(results) {
@@ -234,6 +246,9 @@ try {
 
   const results = [];
   for (const profile of PROFILES) {
+    console.log(`Warming ${profile.id} Lighthouse on ${urls[0]}`);
+    await warmUpLighthouse(urls[0], profile);
+
     for (const url of urls) {
       console.log(`Running ${profile.id} Lighthouse on ${url}`);
       results.push({ url, profile: profile.id, lhr: await runLighthouse(url, profile) });

@@ -9,10 +9,10 @@
   --surface-shadow: 0 24px 60px rgba(16, 27, 51, 0.12);
   --text: #081223;
   --text-soft: #526177;
-  --text-muted: #74839a;
-  --accent: #0b8cff;
+  --text-muted: #5a6678;
+  --accent: #006adf;
   --accent-strong: #0058d3;
-  --accent-alt: #00b894;
+  --accent-alt: #007d63;
   --accent-glow: rgba(11, 140, 255, 0.18);
   --danger: #c84c4c;
   --success: #109c68;
@@ -657,12 +657,49 @@ select {
 }
 
 @media (max-width: 720px) {
+  body {
+    background: var(--bg);
+  }
+
+  .site-background {
+    display: none;
+  }
+
   .site-shell {
     width: min(100vw - 1rem, 1180px);
   }
 
   .site-header {
     justify-content: center;
+  }
+
+  .site-header,
+  .site-footer,
+  .card-surface,
+  .repo-list-shell,
+  .category-section {
+    backdrop-filter: none;
+  }
+
+  .hero-copy,
+  .page-hero > div:first-child,
+  .hero-glance,
+  .page-hero-side,
+  .metric-card,
+  .category-preview-card,
+  .hosting-card,
+  .category-section,
+  .repo-list-shell {
+    box-shadow: none;
+  }
+
+  .hero-copy,
+  .category-preview-card {
+    background: var(--bg-elevated);
+  }
+
+  .category-preview-card::after {
+    display: none;
   }
 
   .hero-panel h1,
