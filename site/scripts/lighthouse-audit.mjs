@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const ROOT_DIR = dirname(fileURLToPath(import.meta.url));
 const SITE_DIR = join(ROOT_DIR, "..");
 const DIST_DIR = join(SITE_DIR, "dist");
-const REPORT_DIR = join(SITE_DIR, ".lighthouseci");
+const REPORT_DIR = join(SITE_DIR, "lighthouse-reports");
 const PORT = process.env.LHCI_PORT || "4321";
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 const BASE_PATH = normalizeBasePath(process.env.PUBLIC_BASE_PATH || "/Github-top50");
@@ -82,6 +82,7 @@ function startPreviewServer() {
     ["run", "preview", "--", "--host", "127.0.0.1", "--port", PORT],
     {
       cwd: SITE_DIR,
+      detached: process.platform !== "win32",
       shell: process.platform === "win32",
       stdio: ["ignore", "pipe", "pipe"]
     }
@@ -91,6 +92,33 @@ function startPreviewServer() {
   server.stderr.on("data", (chunk) => process.stderr.write(chunk));
 
   return server;
+}
+
+async function stopPreviewServer(server) {
+  if (!server.pid || server.exitCode !== null) {
+    return;
+  }
+
+  const exited = new Promise((resolve) => {
+    server.once("exit", resolve);
+  });
+
+  try {
+    if (process.platform === "win32") {
+      server.kill("SIGTERM");
+    } else {
+      process.kill(-server.pid, "SIGTERM");
+    }
+  } catch (error) {
+    if (error?.code !== "ESRCH") {
+      throw error;
+    }
+  }
+
+  await Promise.race([
+    exited,
+    new Promise((resolve) => setTimeout(resolve, 5000))
+  ]);
 }
 
 async function waitForUrl(url, timeoutMs = 30000) {
@@ -221,5 +249,5 @@ try {
 
   assertPerfectScores(results);
 } finally {
-  server.kill("SIGTERM");
+  await stopPreviewServer(server);
 }
