@@ -7,10 +7,12 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
+    "lighthouse": "node ./scripts/lighthouse-audit.mjs",
     "preview": "astro preview"
   },
   "devDependencies": {
     "astro": "^6.1.9",
+    "lighthouse": "^13.1.0",
     "typescript": "^5.6.3"
   }
 }

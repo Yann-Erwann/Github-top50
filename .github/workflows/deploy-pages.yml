@@ -64,6 +64,18 @@ jobs:
         working-directory: site
         run: npm run build
 
+      - name: Audit all built pages with Lighthouse
+        working-directory: site
+        run: npm run lighthouse
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-reports
+          path: site/.lighthouseci
+          if-no-files-found: ignore
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
         with:

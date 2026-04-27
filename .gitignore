@@ -40,5 +40,6 @@ htmlcov/
 site/node_modules/
 site/dist/
 site/.astro/
+site/.lighthouseci/
 site/.uv-cache/
 site/public/data/site-data.json

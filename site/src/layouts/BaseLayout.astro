@@ -34,7 +34,7 @@ const canonical = new URL(Astro.url.pathname, siteUrl);
     <link rel="canonical" href={canonical.toString()} />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
     <title>{documentTitle}</title>
-    <script src={`${import.meta.env.BASE_URL}theme.js`}></script>
+    <script src={`${import.meta.env.BASE_URL}theme.js`} defer></script>
   </head>
   <body>
     <div class="site-background" aria-hidden="true">
