@@ -5,12 +5,30 @@ import { getSiteData } from "../data/site-data";
 import { formatInteger } from "../utils/format";
 
 const data = await getSiteData();
+const topRepositoriesStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Top 50 repositories GitHub par nombre de stars",
+  description:
+    "Classement des 50 repositories GitHub les plus suivis, trie par nombre de stars et enrichi avec langage, description et mouvement de rang.",
+  numberOfItems: data.global.items.length,
+  itemListOrder: "https://schema.org/ItemListOrderDescending",
+  itemListElement: data.global.items.map((item) => ({
+    "@type": "ListItem",
+    position: item.rank,
+    name: item.fullName,
+    url: item.htmlUrl,
+    description: item.description ?? undefined
+  }))
+};
 ---
 
 <BaseLayout
-  title="Top stars"
-  description="Le top 50 GitHub Stars."
+  title="Classement GitHub Stars"
+  description="Consultez le top 50 des repositories GitHub les plus étoilés avec rang, stars, langage principal et signaux de popularité open source."
   currentPath="/top/"
+  pageType="CollectionPage"
+  structuredData={topRepositoriesStructuredData}
 >
   <section class="page-hero page-hero-tight">
     <div>

@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://yann-erwann.github.io/Github-top50/sitemap.xml
