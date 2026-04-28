@@ -4,12 +4,29 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getSiteData } from "../data/site-data";
 
 const data = await getSiteData();
+const hostingStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Recommandations d'hebergement pour stacks populaires",
+  description:
+    "Comparatif des solutions d'hebergement adaptees aux stacks frontend, backend et services conteneurises observes dans les repositories GitHub populaires.",
+  numberOfItems: data.hosting.length,
+  itemListElement: data.hosting.map((item, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: `${item.stack} sur ${item.hosting}`,
+    url: item.url,
+    description: item.notes
+  }))
+};
 ---
 
 <BaseLayout
-  title="Hébergements"
-  description="Matrice d’hébergement recommandée pour les stacks frontend et backend visibles dans le projet."
+  title="Hébergement pour stacks GitHub"
+  description="Trouvez une solution d’hébergement adaptée aux stacks GitHub populaires: Vercel, Render, services Docker, previews et démos rapides."
   currentPath="/hosting/"
+  pageType="CollectionPage"
+  structuredData={hostingStructuredData}
 >
   <section class="page-hero page-hero-tight">
     <div>

@@ -4,12 +4,28 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getSiteData } from "../data/site-data";
 
 const data = await getSiteData();
+const categoriesStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Categories techniques des repositories GitHub populaires",
+  description:
+    "Panorama SEO des repositories GitHub classes par stack, langage, discipline frontend, backend, DevOps, data et intelligence artificielle.",
+  numberOfItems: data.categories.length,
+  itemListElement: data.categories.map((category, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: category.title,
+    description: category.description ?? undefined
+  }))
+};
 ---
 
 <BaseLayout
-  title="Catégories"
-  description="Top repositories par catégorie technique, avec navigation rapide et repères éditoriaux."
+  title="Repositories GitHub par catégorie"
+  description="Comparez les repositories GitHub populaires par stack technique: frontend, backend, DevOps, data, IA, langages et outils open source."
   currentPath="/categories/"
+  pageType="CollectionPage"
+  structuredData={categoriesStructuredData}
 >
   <section class="page-hero page-hero-tight">
     <div>

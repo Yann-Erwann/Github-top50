@@ -1,23 +1,100 @@
 ---
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteHeader from "../components/SiteHeader.astro";
+import {
+  SITE_DEFAULT_DESCRIPTION,
+  SITE_DEFAULT_IMAGE,
+  SITE_DEFAULT_TITLE,
+  SITE_LANGUAGE,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_TWITTER_CARD
+} from "../utils/seo";
 import "../styles/global.css";
 
 interface Props {
   title?: string;
   description?: string;
   currentPath?: string;
+  pageType?: "WebPage" | "CollectionPage";
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const {
-  title = "GitHub Top 50 Observatory",
-  description = "Un site statique premium pour explorer les repositories GitHub les plus suivis et les recommandations d’hébergement associées.",
+  title = SITE_DEFAULT_TITLE,
+  description = SITE_DEFAULT_DESCRIPTION,
   currentPath = "/",
+  pageType = "WebPage",
+  structuredData = [],
 } = Astro.props;
 
-const documentTitle = `${title} · GitHub Top 50`;
+const documentTitle = `${title} · ${SITE_NAME}`;
 const siteUrl = Astro.site ?? new URL("https://yann-erwann.github.io/Github-top50/");
+const siteRoot = new URL(import.meta.env.BASE_URL, siteUrl);
 const canonical = new URL(Astro.url.pathname, siteUrl);
+const socialImage = new URL(`${import.meta.env.BASE_URL}${SITE_DEFAULT_IMAGE}`, siteUrl);
+const robots = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
+const sameAs = [
+  "https://github.com/Yann-Erwann/Github-top50"
+];
+const breadcrumbItems = currentPath === "/"
+  ? []
+  : [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Accueil",
+        item: siteRoot.toString()
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: title,
+        item: canonical.toString()
+      }
+    ];
+const baseStructuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteRoot.toString()}#website`,
+    name: SITE_NAME,
+    url: siteRoot.toString(),
+    inLanguage: SITE_LANGUAGE,
+    description: SITE_DEFAULT_DESCRIPTION,
+    sameAs
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": pageType,
+    "@id": `${canonical.toString()}#webpage`,
+    name: documentTitle,
+    headline: title,
+    description,
+    url: canonical.toString(),
+    isPartOf: {
+      "@id": `${siteRoot.toString()}#website`
+    },
+    inLanguage: SITE_LANGUAGE,
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: socialImage.toString()
+    }
+  },
+  ...(breadcrumbItems.length > 0
+    ? [
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: breadcrumbItems
+        }
+      ]
+    : [])
+];
+const extraStructuredData = Array.isArray(structuredData) ? structuredData : [structuredData];
+const jsonLd = JSON.stringify(
+  [...baseStructuredData, ...extraStructuredData.filter((item) => Object.keys(item).length > 0)]
+).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -30,10 +107,27 @@ const canonical = new URL(Astro.url.pathname, siteUrl);
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
     <meta name="theme-color" content="#081223" />
+    <meta name="author" content={SITE_NAME} />
     <link rel="canonical" href={canonical.toString()} />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content={SITE_LOCALE} />
+    <meta property="og:title" content={documentTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.toString()} />
+    <meta property="og:image" content={socialImage.toString()} />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content={SITE_TWITTER_CARD} />
+    <meta name="twitter:title" content={documentTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage.toString()} />
     <title>{documentTitle}</title>
+    <script type="application/ld+json" set:html={jsonLd}></script>
     <script src={`${import.meta.env.BASE_URL}theme.js`} defer></script>
   </head>
   <body>

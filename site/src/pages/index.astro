@@ -9,12 +9,39 @@ import { withBase } from "../utils/routes";
 
 const data = await getSiteData();
 const highlightedCategories = data.categories.slice(0, 6);
+const datasetStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  name: "GitHub Top 50 Stars snapshot",
+  description:
+    "Snapshot des repositories GitHub les plus suivis avec classement, nombre de stars, langages, categories et recommandations d'hebergement.",
+  keywords: [
+    "GitHub Stars",
+    "repositories GitHub",
+    "classement open source",
+    "top repositories",
+    "hebergement web"
+  ],
+  dateModified: data.snapshot.capturedAt,
+  creator: {
+    "@type": "Organization",
+    name: "GitHub Top 50"
+  },
+  variableMeasured: [
+    "rang",
+    "stars",
+    "langage",
+    "categorie technique",
+    "hebergement recommande"
+  ]
+};
 ---
 
 <BaseLayout
-  title="Vue d’ensemble"
-  description="Vue premium du Top 50 GitHub Stars, des catégories techniques et des recommandations d’hébergement."
+  title="Top 50 GitHub Stars 2026"
+  description="Explorez le classement des repositories GitHub les plus suivis, les tendances open source par catégorie et les meilleurs choix d’hébergement."
   currentPath="/"
+  structuredData={datasetStructuredData}
 >
   <section class="hero-panel">
     <div class="hero-copy">
