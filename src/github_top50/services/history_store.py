@@ -125,6 +125,7 @@ class SnapshotStore:
                 "language": repository.language,
                 "description": repository.description,
                 "rank": repository.rank,
+                "previous_rank": repository.previous_rank,
             }
             for repository in items
         ]
@@ -140,6 +141,7 @@ class SnapshotStore:
                 language=item.get("language"),
                 description=item.get("description"),
                 rank=item.get("rank"),
+                previous_rank=item.get("previous_rank"),
             )
             for item in items
         ]

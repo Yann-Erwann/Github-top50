@@ -51,9 +51,23 @@ def test_snapshot_store_round_trips_latest_snapshot(tmp_path):
         history_dir=tmp_path / HISTORY_DIR,
     )
     categories = (CategoryDefinition(title="Cat A", tag="A", query="q-a"),)
-    global_items = apply_rank_changes([_make_repo(repo_id=1, name="org/one")])
+    previous_global_items = [
+        _make_repo(repo_id=99, name="org/old", rank=1),
+        _make_repo(repo_id=1, name="org/one", rank=2),
+    ]
+    previous_category_items = [
+        _make_repo(repo_id=99, name="org/old-cat", rank=1),
+        _make_repo(repo_id=10, name="org/cat-a", rank=2),
+    ]
+    global_items = apply_rank_changes(
+        [_make_repo(repo_id=1, name="org/one")],
+        previous_global_items,
+    )
     category_items = {
-        "A": apply_rank_changes([_make_repo(repo_id=10, name="org/cat-a")])
+        "A": apply_rank_changes(
+            [_make_repo(repo_id=10, name="org/cat-a")],
+            previous_category_items,
+        )
     }
 
     history_path = store.save(
@@ -70,5 +84,7 @@ def test_snapshot_store_round_trips_latest_snapshot(tmp_path):
     assert latest.captured_at == "2026-03-18T06:00:00Z"
     assert latest.global_items[0].full_name == "org/one"
     assert latest.global_items[0].rank == 1
+    assert latest.global_items[0].previous_rank == 2
     assert latest.category_items["A"][0].full_name == "org/cat-a"
     assert latest.category_items["A"][0].rank == 1
+    assert latest.category_items["A"][0].previous_rank == 2

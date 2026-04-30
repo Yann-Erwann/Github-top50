@@ -183,6 +183,26 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
     }
 
 
+def test_build_site_payload_uses_previous_snapshot_for_rank_movements(export_config):
+    previous_snapshot = _make_snapshot()
+    previous_snapshot["captured_at"] = "2026-04-03T07:36:12Z"
+    previous_snapshot["global"]["items"][0]["rank"] = 4
+    previous_snapshot["categories"]["PYTHON"]["items"][0]["rank"] = 2
+    previous_snapshot["categories"]["REACT"]["items"][0]["id"] = 99
+    previous_snapshot["categories"]["REACT"]["items"][0][
+        "full_name"
+    ] = "owner/old-react"
+
+    payload = exporter.build_site_payload(
+        _make_snapshot(),
+        previous_snapshot=previous_snapshot,
+    )
+
+    assert payload["global"]["items"][0]["previousRank"] == 4
+    assert payload["categories"][0]["items"][0]["previousRank"] == 2
+    assert payload["categories"][1]["items"][0]["previousRank"] is None
+
+
 def test_build_site_payload_raises_when_snapshot_tags_drift(export_config):
     snapshot = _make_snapshot()
     snapshot["categories"] = {"PYTHON": snapshot["categories"]["PYTHON"]}
@@ -235,13 +255,56 @@ def test_export_site_data_writes_json_and_creates_parent_directory(
     assert json.loads(output_path.read_text(encoding="utf-8")) == payload
 
 
+def test_export_site_data_uses_latest_history_before_current_snapshot(
+    export_config, tmp_path
+):
+    input_path = tmp_path / "raw" / "latest.json"
+    output_path = tmp_path / "public" / "site-data.json"
+    history_dir = tmp_path / "raw" / "history"
+    current_snapshot = _make_snapshot()
+    older_snapshot = _make_snapshot()
+    previous_snapshot = _make_snapshot()
+    same_timestamp_snapshot = _make_snapshot()
+
+    older_snapshot["captured_at"] = "2026-04-02T07:36:12Z"
+    older_snapshot["global"]["items"][0]["rank"] = 9
+    previous_snapshot["captured_at"] = "2026-04-03T07:36:12Z"
+    previous_snapshot["global"]["items"][0]["rank"] = 3
+    same_timestamp_snapshot["captured_at"] = current_snapshot["captured_at"]
+    same_timestamp_snapshot["global"]["items"][0]["rank"] = 7
+
+    input_path.parent.mkdir(parents=True)
+    history_dir.mkdir(parents=True)
+    input_path.write_text(json.dumps(current_snapshot), encoding="utf-8")
+    (history_dir / "older.json").write_text(
+        json.dumps(older_snapshot),
+        encoding="utf-8",
+    )
+    (history_dir / "previous.json").write_text(
+        json.dumps(previous_snapshot),
+        encoding="utf-8",
+    )
+    (history_dir / "same.json").write_text(
+        json.dumps(same_timestamp_snapshot),
+        encoding="utf-8",
+    )
+
+    payload = exporter.export_site_data(
+        input_path=input_path,
+        output_path=output_path,
+        history_dir=history_dir,
+    )
+
+    assert payload["global"]["items"][0]["previousRank"] == 3
+
+
 def test_main_passes_cli_paths_to_export(monkeypatch):
     captured = {}
 
     def fake_export_site_data(
-        input_path: Path, output_path: Path, *, generated_at=None
+        input_path: Path, output_path: Path, *, generated_at=None, history_dir=None
     ):
-        captured["args"] = (input_path, output_path, generated_at)
+        captured["args"] = (input_path, output_path, generated_at, history_dir)
         return {}
 
     monkeypatch.setattr(exporter, "export_site_data", fake_export_site_data)
@@ -259,4 +322,5 @@ def test_main_passes_cli_paths_to_export(monkeypatch):
         Path("custom/input.json"),
         Path("custom/output.json"),
         None,
+        exporter.HISTORY_DIR,
     )
