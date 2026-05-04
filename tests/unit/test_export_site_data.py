@@ -189,9 +189,9 @@ def test_build_site_payload_uses_previous_snapshot_for_rank_movements(export_con
     previous_snapshot["global"]["items"][0]["rank"] = 4
     previous_snapshot["categories"]["PYTHON"]["items"][0]["rank"] = 2
     previous_snapshot["categories"]["REACT"]["items"][0]["id"] = 99
-    previous_snapshot["categories"]["REACT"]["items"][0][
-        "full_name"
-    ] = "owner/old-react"
+    previous_snapshot["categories"]["REACT"]["items"][0]["full_name"] = (
+        "owner/old-react"
+    )
 
     payload = exporter.build_site_payload(
         _make_snapshot(),
