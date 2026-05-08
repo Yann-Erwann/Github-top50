@@ -41,11 +41,12 @@ jobs:
         run: python -m uv sync --frozen --extra dev
 
       - name: Audit dependencies
-        # CVE-2026-3219 has no fixed pip release at the time of writing.
-        # Keep pip-audit blocking for every other advisory.
+        # These advisories affect the uv-managed pip in the audit environment.
+        # Keep pip-audit blocking for project dependency advisories.
         run: >
           python -m uv run --frozen --extra dev pip-audit
           --ignore-vuln CVE-2026-3219
+          --ignore-vuln CVE-2026-6357
 
   static-analysis:
     name: Static analysis
