@@ -40,6 +40,9 @@ jobs:
       - name: Sync dependencies
         run: python -m uv sync --frozen --extra dev
 
+      - name: Upgrade audit environment pip
+        run: python -m uv run --frozen --extra dev python -m pip install --upgrade "pip>=26.1"
+
       - name: Audit dependencies
         # CVE-2026-3219 has no fixed pip release at the time of writing.
         # Keep pip-audit blocking for every other advisory.
