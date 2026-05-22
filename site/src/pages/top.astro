@@ -1,10 +1,12 @@
 ---
+import PeriodFilter from "../components/PeriodFilter.astro";
 import RepositoryList from "../components/RepositoryList.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getSiteData } from "../data/site-data";
 import { formatInteger } from "../utils/format";
 
 const data = await getSiteData();
+const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
 const topRepositoriesStructuredData = {
   "@context": "https://schema.org",
   "@type": "ItemList",
@@ -46,6 +48,7 @@ const topRepositoriesStructuredData = {
   </section>
 
   <section class="section-block">
-    <RepositoryList items={data.global.items} />
+    <PeriodFilter periods={data.periods} defaultPeriod={defaultPeriod} />
+    <RepositoryList items={data.global.items} defaultPeriod={defaultPeriod} />
   </section>
 </BaseLayout>

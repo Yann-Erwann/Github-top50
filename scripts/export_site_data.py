@@ -5,8 +5,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from calendar import monthrange
 from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -39,6 +41,28 @@ CATEGORY_ACCENTS = (
 )
 
 RepositoryKey = int | str
+
+
+@dataclass(frozen=True, slots=True)
+class PeriodDefinition:
+    """A comparison period exposed by the static site."""
+
+    id: str
+    label: str
+    days: int | None = None
+    months: int | None = None
+    all_time: bool = False
+
+
+PERIODS: tuple[PeriodDefinition, ...] = (
+    PeriodDefinition(id="7d", label="7 jours", days=7),
+    PeriodDefinition(id="15d", label="15 jours", days=15),
+    PeriodDefinition(id="30d", label="30 jours", days=30),
+    PeriodDefinition(id="2m", label="2 mois", months=2),
+    PeriodDefinition(id="6m", label="6 mois", months=6),
+    PeriodDefinition(id="12m", label="12 mois", months=12),
+    PeriodDefinition(id="all", label="Toute la période", all_time=True),
+)
 
 
 def is_allowed_host(host: str, allowed_hosts: frozenset[str]) -> bool:
@@ -118,19 +142,32 @@ def build_rank_index(items: Sequence[Mapping[str, Any]]) -> dict[RepositoryKey, 
     }
 
 
+def explicit_previous_rank_for(item: Mapping[str, Any]) -> int | None:
+    """Return an item's explicit previous rank, if the source snapshot provides one."""
+    explicit_previous_rank = to_int_or_none(item.get("previous_rank"))
+    if explicit_previous_rank is not None:
+        return explicit_previous_rank
+
+    return to_int_or_none(item.get("previousRank"))
+
+
 def previous_rank_for(
     item: Mapping[str, Any],
     previous_ranks: Mapping[RepositoryKey, int] | None,
 ) -> int | None:
     """Return the previous rank from explicit data or from historical snapshots."""
-    explicit_previous_rank = to_int_or_none(item.get("previous_rank"))
+    explicit_previous_rank = explicit_previous_rank_for(item)
     if explicit_previous_rank is not None:
         return explicit_previous_rank
 
-    explicit_previous_rank = to_int_or_none(item.get("previousRank"))
-    if explicit_previous_rank is not None:
-        return explicit_previous_rank
+    return None if previous_ranks is None else previous_ranks.get(repository_key(item))
 
+
+def movement_rank_for(
+    item: Mapping[str, Any],
+    previous_ranks: Mapping[RepositoryKey, int] | None,
+) -> int | None:
+    """Return a historical rank for a comparison period."""
     return None if previous_ranks is None else previous_ranks.get(repository_key(item))
 
 
@@ -138,15 +175,21 @@ def to_camel_repository(
     item: Mapping[str, Any],
     fallback_rank: int,
     previous_ranks: Mapping[RepositoryKey, int] | None = None,
+    period_rank_indexes: Mapping[str, Mapping[RepositoryKey, int] | None] | None = None,
 ) -> dict[str, Any]:
     """Normalize repository records for the TypeScript frontend contract."""
     full_name = str(item["full_name"])
     owner, _, name = full_name.partition("/")
+    rank = rank_from_item(item, fallback_rank)
 
     return {
         "id": item.get("id"),
-        "rank": item.get("rank", fallback_rank),
+        "rank": rank,
         "previousRank": previous_rank_for(item, previous_ranks),
+        "movements": {
+            period_id: movement_rank_for(item, rank_index)
+            for period_id, rank_index in (period_rank_indexes or {}).items()
+        },
         "fullName": full_name,
         "owner": owner,
         "name": name or full_name,
@@ -231,18 +274,44 @@ def load_snapshot(input_path: Path) -> dict[str, Any]:
         return json.load(input_file)
 
 
-def load_previous_snapshot(
+def subtract_months(value: datetime, months: int) -> datetime:
+    """Return a timestamp shifted back by a whole number of calendar months."""
+    month_index = value.month - months - 1
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, monthrange(year, month)[1])
+
+    return value.replace(year=year, month=month, day=day)
+
+
+def period_target_timestamp(
+    current_timestamp: datetime,
+    period: PeriodDefinition,
+) -> datetime | None:
+    """Return the desired historical timestamp for a comparison period."""
+    if period.all_time:
+        return None
+
+    if period.days is not None:
+        return current_timestamp - timedelta(days=period.days)
+
+    if period.months is not None:
+        return subtract_months(current_timestamp, period.months)
+
+    return None
+
+
+def load_history_snapshots(
     current_snapshot: Mapping[str, Any],
     *,
     history_dir: Path = HISTORY_DIR,
-) -> dict[str, Any] | None:
-    """Load the latest historical snapshot captured before the current snapshot."""
+) -> list[tuple[datetime, dict[str, Any]]]:
+    """Load historical snapshots captured before the current snapshot."""
     current_timestamp = parse_snapshot_timestamp(current_snapshot.get("captured_at"))
     if current_timestamp is None or not history_dir.exists():
-        return None
+        return []
 
-    previous_snapshot: dict[str, Any] | None = None
-    previous_timestamp: datetime | None = None
+    history_snapshots: list[tuple[datetime, dict[str, Any]]] = []
 
     for history_path in history_dir.glob("*.json"):
         candidate = load_snapshot(history_path)
@@ -251,11 +320,65 @@ def load_previous_snapshot(
         if candidate_timestamp is None or candidate_timestamp >= current_timestamp:
             continue
 
-        if previous_timestamp is None or candidate_timestamp > previous_timestamp:
-            previous_snapshot = candidate
-            previous_timestamp = candidate_timestamp
+        history_snapshots.append((candidate_timestamp, candidate))
 
-    return previous_snapshot
+    return sorted(history_snapshots, key=lambda entry: entry[0])
+
+
+def load_previous_snapshot(
+    current_snapshot: Mapping[str, Any],
+    *,
+    history_dir: Path = HISTORY_DIR,
+) -> dict[str, Any] | None:
+    """Load the latest historical snapshot captured before the current snapshot."""
+    history_snapshots = load_history_snapshots(
+        current_snapshot, history_dir=history_dir
+    )
+
+    return history_snapshots[-1][1] if history_snapshots else None
+
+
+def select_period_snapshot(
+    history_snapshots: Sequence[tuple[datetime, Mapping[str, Any]]],
+    current_timestamp: datetime,
+    period: PeriodDefinition,
+) -> Mapping[str, Any] | None:
+    """Select the best historical snapshot for a comparison period."""
+    if not history_snapshots:
+        return None
+
+    if period.all_time:
+        return history_snapshots[0][1]
+
+    target_timestamp = period_target_timestamp(current_timestamp, period)
+    if target_timestamp is None:
+        return history_snapshots[-1][1]
+
+    selected_snapshot: Mapping[str, Any] | None = None
+
+    for snapshot_timestamp, snapshot in history_snapshots:
+        if snapshot_timestamp <= target_timestamp:
+            selected_snapshot = snapshot
+            continue
+
+        break
+
+    return selected_snapshot or history_snapshots[0][1]
+
+
+def build_period_snapshots(
+    current_snapshot: Mapping[str, Any],
+    history_snapshots: Sequence[tuple[datetime, Mapping[str, Any]]],
+) -> dict[str, Mapping[str, Any] | None]:
+    """Map each configured period to its selected historical snapshot."""
+    current_timestamp = parse_snapshot_timestamp(current_snapshot.get("captured_at"))
+    if current_timestamp is None:
+        return {period.id: None for period in PERIODS}
+
+    return {
+        period.id: select_period_snapshot(history_snapshots, current_timestamp, period)
+        for period in PERIODS
+    }
 
 
 def validate_category_tags(snapshot_categories: Mapping[str, Any]) -> None:
@@ -297,12 +420,68 @@ def category_rank_index(
     return build_rank_index(previous_items)
 
 
+def category_period_rank_indexes(
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    tag: str,
+) -> dict[str, dict[RepositoryKey, int] | None]:
+    """Build category rank indexes for every comparison period."""
+    period_ranks: dict[str, dict[RepositoryKey, int] | None] = {}
+
+    for period_id, snapshot in period_snapshots.items():
+        previous_categories = snapshot.get("categories", {}) if snapshot else {}
+        period_ranks[period_id] = category_rank_index(previous_categories, tag)
+
+    return period_ranks
+
+
+def global_period_rank_indexes(
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+) -> dict[str, dict[RepositoryKey, int] | None]:
+    """Build global rank indexes for every comparison period."""
+    period_ranks: dict[str, dict[RepositoryKey, int] | None] = {}
+
+    for period_id, snapshot in period_snapshots.items():
+        if snapshot is None:
+            period_ranks[period_id] = None
+            continue
+
+        period_ranks[period_id] = build_rank_index(snapshot["global"]["items"])
+
+    return period_ranks
+
+
+def build_period_metadata(
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+) -> list[dict[str, Any]]:
+    """Build the frontend metadata for the period selector."""
+    metadata: list[dict[str, Any]] = []
+
+    for period in PERIODS:
+        snapshot = period_snapshots.get(period.id)
+        baseline_captured_at = (
+            str(snapshot["captured_at"]) if snapshot is not None else None
+        )
+        metadata.append(
+            {
+                "id": period.id,
+                "label": period.label,
+                "days": period.days,
+                "months": period.months,
+                "available": snapshot is not None,
+                "baselineCapturedAt": baseline_captured_at,
+            }
+        )
+
+    return metadata
+
+
 def build_site_payload(
     snapshot: Mapping[str, Any],
     *,
     input_path: Path = LATEST_SNAPSHOT_PATH,
     generated_at: str | None = None,
     previous_snapshot: Mapping[str, Any] | None = None,
+    period_snapshots: Mapping[str, Mapping[str, Any] | None] | None = None,
 ) -> dict[str, Any]:
     """Build the site payload by combining raw snapshot data and static metadata."""
     snapshot_categories = snapshot["categories"]
@@ -315,15 +494,25 @@ def build_site_payload(
         if previous_snapshot is not None
         else None
     )
+    selected_period_snapshots = (
+        {period.id: period_snapshots.get(period.id) for period in PERIODS}
+        if period_snapshots is not None
+        else {period.id: previous_snapshot for period in PERIODS}
+    )
+    global_period_ranks = global_period_rank_indexes(selected_period_snapshots)
 
     global_items = [
-        to_camel_repository(item, index, global_previous_ranks)
+        to_camel_repository(item, index, global_previous_ranks, global_period_ranks)
         for index, item in enumerate(snapshot["global"]["items"], start=1)
     ]
     categories = []
 
     for index, category in enumerate(CATEGORIES):
         previous_ranks = category_rank_index(previous_categories, category.tag)
+        period_ranks = category_period_rank_indexes(
+            selected_period_snapshots,
+            category.tag,
+        )
         categories.append(
             {
                 "tag": category.tag,
@@ -332,7 +521,7 @@ def build_site_payload(
                 "description": build_category_description(category.title),
                 "accent": CATEGORY_ACCENTS[index % len(CATEGORY_ACCENTS)],
                 "items": [
-                    to_camel_repository(item, item_index, previous_ranks)
+                    to_camel_repository(item, item_index, previous_ranks, period_ranks)
                     for item_index, item in enumerate(
                         snapshot_categories[category.tag]["items"],
                         start=1,
@@ -364,6 +553,7 @@ def build_site_payload(
             "label": f"Snapshot du {captured_at[:10]}",
             "source": input_path.as_posix(),
         },
+        "periods": build_period_metadata(selected_period_snapshots),
         "global": {
             "title": "Top 50 GitHub Stars",
             "subtitle": (
@@ -401,12 +591,15 @@ def export_site_data(
 ) -> dict[str, Any]:
     """Read the snapshot, build the consolidated payload, and write it to disk."""
     snapshot = load_snapshot(input_path)
-    previous_snapshot = load_previous_snapshot(snapshot, history_dir=history_dir)
+    history_snapshots = load_history_snapshots(snapshot, history_dir=history_dir)
+    previous_snapshot = history_snapshots[-1][1] if history_snapshots else None
+    period_snapshots = build_period_snapshots(snapshot, history_snapshots)
     payload = build_site_payload(
         snapshot,
         input_path=input_path,
         generated_at=generated_at,
         previous_snapshot=previous_snapshot,
+        period_snapshots=period_snapshots,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
