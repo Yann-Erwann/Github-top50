@@ -27,8 +27,8 @@ const selectedBaselineLabel = selectedPeriodOption?.baselineCapturedAt
         <span class="period-filter-label">Comparaison</span>
         <p class="period-filter-status" data-period-status aria-live="polite">
           {selectedPeriodOption
-            ? `${selectedPeriodOption.label} · ${selectedBaselineLabel}`
-            : selectedBaselineLabel}
+            ? `Classement par étoiles gagnées · ${selectedPeriodOption.label} · ${selectedBaselineLabel}`
+            : `Classement par étoiles gagnées · ${selectedBaselineLabel}`}
         </p>
       </div>
       <div class="period-options" role="radiogroup" aria-label="Période de comparaison">

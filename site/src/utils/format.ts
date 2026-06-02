@@ -3,6 +3,11 @@ export interface MovementMeta {
   tone: "up" | "down" | "steady" | "new";
 }
 
+export interface StarsGainedMeta {
+  label: string;
+  tone: "up" | "down" | "steady" | "new";
+}
+
 const compactNumberFormatter = new Intl.NumberFormat("fr-FR", {
   notation: "compact",
   maximumFractionDigits: 1
@@ -57,6 +62,34 @@ export function formatMovement(
 
   return {
     label: "Stable",
+    tone: "steady"
+  };
+}
+
+export function formatStarsGained(value: number | null): StarsGainedMeta {
+  if (value === null) {
+    return {
+      label: "Non suivi",
+      tone: "new"
+    };
+  }
+
+  if (value > 0) {
+    return {
+      label: `+${formatCompactNumber(value)}`,
+      tone: "up"
+    };
+  }
+
+  if (value < 0) {
+    return {
+      label: formatCompactNumber(value),
+      tone: "down"
+    };
+  }
+
+  return {
+    label: "0",
     tone: "steady"
   };
 }
