@@ -16,7 +16,7 @@ const datasetStructuredData = {
   "@type": "Dataset",
   name: "GitHub Top 50 Stars snapshot",
   description:
-    "Snapshot des repositories GitHub suivis avec classement periodique, etoiles gagnees, nombre total de stars, langages, categories et recommandations d'hebergement.",
+    "Snapshot des repositories GitHub suivis avec classement periodique, total d'etoiles recues sur la periode, nombre total historique de stars, langages, categories et recommandations d'hebergement.",
   keywords: [
     "GitHub Stars",
     "repositories GitHub",
@@ -31,7 +31,7 @@ const datasetStructuredData = {
   },
   variableMeasured: [
     "rang",
-    "stars gagnees",
+    "stars recues sur la periode",
     "stars",
     "langage",
     "categorie technique",
@@ -52,7 +52,7 @@ const datasetStructuredData = {
       <h1>Un observatoire visuel pour lire les top repositories GitHub et les stacks d’hébergement en un coup d’œil.</h1>
       <p class="hero-description">
         Une interface statique, rapide et éditorialisée pour suivre les signaux qui comptent:
-        stars gagnées, classements périodiques, catégories techniques et recommandations
+        étoiles reçues sur la période, classements périodiques, catégories techniques et recommandations
         d’hébergement pragmatiques.
       </p>
       <div class="hero-actions">
@@ -105,7 +105,7 @@ const datasetStructuredData = {
   <section class="section-block">
     <div class="section-heading">
       <p class="eyebrow">Top highlights</p>
-      <h2>Repositories les plus visibles du moment</h2>
+      <h2>Repositories qui reçoivent le plus de stars</h2>
     </div>
     <PeriodFilter periods={data.periods} defaultPeriod={defaultPeriod} />
     <RepositoryList

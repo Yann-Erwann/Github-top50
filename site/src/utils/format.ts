@@ -3,7 +3,7 @@ export interface MovementMeta {
   tone: "up" | "down" | "steady" | "new";
 }
 
-export interface StarsGainedMeta {
+export interface PeriodStarsMeta {
   label: string;
   tone: "up" | "down" | "steady" | "new";
 }
@@ -66,7 +66,7 @@ export function formatMovement(
   };
 }
 
-export function formatStarsGained(value: number | null): StarsGainedMeta {
+export function formatPeriodStars(value: number | null): PeriodStarsMeta {
   if (value === null) {
     return {
       label: "Non suivi",
@@ -76,7 +76,7 @@ export function formatStarsGained(value: number | null): StarsGainedMeta {
 
   if (value > 0) {
     return {
-      label: `+${formatCompactNumber(value)}`,
+      label: formatCompactNumber(value),
       tone: "up"
     };
   }

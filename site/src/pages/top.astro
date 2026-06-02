@@ -11,9 +11,9 @@ const defaultPeriodRepositories = sortRepositoriesByPeriod(data.global.items, de
 const topRepositoriesStructuredData = {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  name: "Top 50 repositories GitHub suivis par étoiles gagnées",
+  name: "Top 50 repositories GitHub suivis par étoiles reçues sur la période",
   description:
-    "Classement des repositories GitHub suivis selon les étoiles gagnées depuis le snapshot de référence, avec langage, description et total de stars.",
+    "Classement des repositories GitHub suivis selon le total d'étoiles reçues sur la période sélectionnée, avec langage, description et total historique GitHub.",
   numberOfItems: data.global.items.length,
   itemListOrder: "https://schema.org/ItemListOrderDescending",
   itemListElement: defaultPeriodRepositories.map((item, index) => ({
@@ -28,7 +28,7 @@ const topRepositoriesStructuredData = {
 
 <BaseLayout
   title="Classement GitHub Stars"
-  description="Consultez les repositories GitHub suivis classés par étoiles gagnées sur la période sélectionnée, avec rang, total de stars et langage principal."
+  description="Consultez les repositories GitHub suivis classés par total d’étoiles reçues sur la période sélectionnée, avec rang, total historique GitHub et langage principal."
   currentPath="/top/"
   pageType="CollectionPage"
   structuredData={topRepositoriesStructuredData}
@@ -38,8 +38,8 @@ const topRepositoriesStructuredData = {
       <p class="eyebrow">Top 50 global</p>
       <h1>Classement principal des repositories GitHub</h1>
       <p class="page-intro">
-        Sélectionne une période pour classer les repositories suivis selon les étoiles gagnées
-        depuis le snapshot de référence.
+        Sélectionne une période pour classer les repositories suivis selon le total d’étoiles
+        reçues depuis le snapshot de référence.
       </p>
     </div>
     <div class="page-hero-side card-surface">
