@@ -1,5 +1,4 @@
 (() => {
-  const storageKey = "github-top50-period";
   const toneClasses = [
     "movement-up",
     "movement-down",
@@ -94,22 +93,6 @@
     };
   };
 
-  const readStoredPeriod = () => {
-    try {
-      return window.localStorage.getItem(storageKey);
-    } catch {
-      return null;
-    }
-  };
-
-  const storePeriod = (periodId) => {
-    try {
-      window.localStorage.setItem(storageKey, periodId);
-    } catch {
-      // Storage can be disabled without affecting the selector itself.
-    }
-  };
-
   const initialPeriod = () => {
     const validIds = validPeriodIds();
     const params = new URLSearchParams(window.location.search);
@@ -117,17 +100,7 @@
 
     if (queryPeriod && validIds.has(queryPeriod)) {
       return {
-        periodId: queryPeriod,
-        persist: true
-      };
-    }
-
-    const storedPeriod = readStoredPeriod();
-
-    if (storedPeriod && validIds.has(storedPeriod)) {
-      return {
-        periodId: storedPeriod,
-        persist: false
+        periodId: queryPeriod
       };
     }
 
@@ -136,14 +109,12 @@
 
     if (defaultPeriod && validIds.has(defaultPeriod)) {
       return {
-        periodId: defaultPeriod,
-        persist: false
+        periodId: defaultPeriod
       };
     }
 
     return {
-      periodId: enabledButtons()[0]?.dataset.periodId || null,
-      persist: false
+      periodId: enabledButtons()[0]?.dataset.periodId || null
     };
   };
 
@@ -244,10 +215,6 @@
     updateLists(periodId);
     updatePeriodContext(periodId);
 
-    if (options.persist) {
-      storePeriod(periodId);
-    }
-
     if (options.updateUrl) {
       updateUrl(periodId);
     }
@@ -257,7 +224,6 @@
     document.querySelectorAll("[data-period-button]").forEach((button) => {
       button.addEventListener("click", () => {
         applyPeriod(button.dataset.periodId, {
-          persist: true,
           updateUrl: true
         });
       });
@@ -308,7 +274,6 @@
 
     if (initial.periodId) {
       applyPeriod(initial.periodId, {
-        persist: initial.persist,
         updateUrl: false
       });
     }
