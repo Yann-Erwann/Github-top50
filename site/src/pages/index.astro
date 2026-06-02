@@ -10,7 +10,10 @@ import { withBase } from "../utils/routes";
 
 const data = await getSiteData();
 const highlightedCategories = data.categories.slice(0, 6);
-const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
+const defaultPeriod =
+  data.periods.find((period) => period.id === "all" && period.available)?.id ??
+  data.periods.find((period) => period.available)?.id ??
+  null;
 const datasetStructuredData = {
   "@context": "https://schema.org",
   "@type": "Dataset",
