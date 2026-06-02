@@ -1,51 +1,62 @@
 ---
-import type { RepositoryEntry } from "../data/site-data";
-import { formatCompactNumber, formatMovement, formatInteger } from "../utils/format";
+import { sortRepositoriesByPeriod, type RepositoryEntry } from "../data/site-data";
+import { formatCompactNumber, formatStarsGained, formatInteger } from "../utils/format";
 
 interface Props {
   items: RepositoryEntry[];
   id?: string;
   compact?: boolean;
   defaultPeriod?: string | null;
+  limit?: number | null;
 }
 
-const { items, id, compact = false, defaultPeriod = null } = Astro.props;
+const { items, id, compact = false, defaultPeriod = null, limit = null } = Astro.props;
+const visibleItems = sortRepositoriesByPeriod(items, defaultPeriod);
 ---
 
 <div class:list={["repo-list-shell", compact && "is-compact"]}>
   <div class="repo-list-head" aria-hidden="true">
-    <span>Rank</span>
-    <span>Move</span>
+    <span data-period-rank-heading>Rank</span>
+    <span data-period-column-heading>Gagnés</span>
     <span>Repository</span>
     <span>Langage</span>
     <span>Stars</span>
   </div>
 
-  <div id={id} class="repo-list">
+  <div id={id} class="repo-list" data-repo-list data-max-items={limit}>
     {
-      items.map((item) => {
-        const periodPreviousRank =
+      visibleItems.map((item, index) => {
+        const periodRanking =
           defaultPeriod &&
-          Object.prototype.hasOwnProperty.call(item.movements, defaultPeriod)
-            ? item.movements[defaultPeriod]
-            : item.previousRank;
-        const movement = formatMovement(item.rank, periodPreviousRank);
+          Object.prototype.hasOwnProperty.call(item.periodRankings, defaultPeriod)
+            ? item.periodRankings[defaultPeriod]
+            : null;
+        const periodStarsGained =
+          defaultPeriod &&
+          Object.prototype.hasOwnProperty.call(item.periodStarsGained, defaultPeriod)
+            ? item.periodStarsGained[defaultPeriod]
+            : null;
+        const starsGained = formatStarsGained(periodStarsGained);
         const [owner, repositoryName] = item.fullName.split("/");
 
         return (
           <article
             class="repo-row"
+            data-repo-row
+            data-current-rank={item.rank}
+            data-period-rankings={JSON.stringify(item.periodRankings)}
+            data-period-stars-gained={JSON.stringify(item.periodStarsGained)}
+            hidden={limit !== null && index >= limit}
           >
-            <div class="repo-rank">#{formatInteger(item.rank)}</div>
+            <div class="repo-rank" data-period-rank>
+              {periodRanking === null ? "#—" : `#${formatInteger(periodRanking)}`}
+            </div>
             <div
-              class:list={["movement-pill", `movement-${movement.tone}`]}
-              data-movement-pill
-              data-rank={item.rank}
-              data-previous-rank={item.previousRank ?? ""}
-              data-movements={JSON.stringify(item.movements)}
-              aria-label={`Mouvement: ${movement.label}`}
+              class:list={["movement-pill", `movement-${starsGained.tone}`]}
+              data-stars-gained
+              aria-label={`Étoiles gagnées: ${starsGained.label}`}
             >
-              {movement.label}
+              {starsGained.label}
             </div>
             <div class="repo-main">
               <a class="repo-link" href={item.htmlUrl}>

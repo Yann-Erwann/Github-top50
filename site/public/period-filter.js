@@ -6,11 +6,16 @@
     "movement-steady",
     "movement-new"
   ];
+  const compactNumberFormatter = new Intl.NumberFormat("fr-FR", {
+    notation: "compact",
+    maximumFractionDigits: 1
+  });
+  const integerFormatter = new Intl.NumberFormat("fr-FR");
 
   const enabledButtons = () =>
     Array.from(document.querySelectorAll("[data-period-button]:not(:disabled)"));
 
-  const parseStoredRank = (value) => {
+  const parseStoredNumber = (value) => {
     if (typeof value !== "string" || value.length === 0) {
       return null;
     }
@@ -20,47 +25,53 @@
     return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
   };
 
-  const normalizeRank = (value) =>
+  const normalizeNumber = (value) =>
     typeof value === "number" && Number.isFinite(value)
       ? Math.trunc(value)
       : null;
 
-  const parseMovements = (pill) => {
+  const parsePeriodValues = (row, key) => {
     try {
-      const movements = JSON.parse(pill.dataset.movements || "{}");
+      const values = JSON.parse(row.dataset[key] || "{}");
 
-      return movements && typeof movements === "object" ? movements : {};
+      return values && typeof values === "object" ? values : {};
     } catch {
       return {};
     }
   };
 
-  const formatMovement = (rank, previousRank) => {
-    if (previousRank === null) {
+  const periodValue = (row, key, periodId) => {
+    const values = parsePeriodValues(row, key);
+
+    return Object.prototype.hasOwnProperty.call(values, periodId)
+      ? normalizeNumber(values[periodId])
+      : null;
+  };
+
+  const formatStarsGained = (value) => {
+    if (value === null) {
       return {
-        label: "Nouveau",
+        label: "Non suivi",
         tone: "new"
       };
     }
 
-    const delta = previousRank - rank;
-
-    if (delta > 0) {
+    if (value > 0) {
       return {
-        label: `+${delta}`,
+        label: `+${compactNumberFormatter.format(value)}`,
         tone: "up"
       };
     }
 
-    if (delta < 0) {
+    if (value < 0) {
       return {
-        label: `${delta}`,
+        label: compactNumberFormatter.format(value),
         tone: "down"
       };
     }
 
     return {
-      label: "Stable",
+      label: "0",
       tone: "steady"
     };
   };
@@ -71,6 +82,17 @@
         .map((button) => button.dataset.periodId)
         .filter(Boolean)
     );
+
+  const periodContext = (periodId) => {
+    const button = enabledButtons().find(
+      (candidate) => candidate.dataset.periodId === periodId
+    );
+
+    return {
+      label: button?.dataset.periodLabel || periodId,
+      baselineLabel: button?.dataset.baselineLabel || "Historique indisponible"
+    };
+  };
 
   const readStoredPeriod = () => {
     try {
@@ -131,26 +153,80 @@
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   };
 
-  const updatePills = (periodId) => {
-    document.querySelectorAll("[data-movement-pill]").forEach((pill) => {
-      const rank = parseStoredRank(pill.dataset.rank);
+  const updateLists = (periodId) => {
+    const context = periodContext(periodId);
 
-      if (rank === null) {
-        return;
-      }
+    document.querySelectorAll("[data-repo-list]").forEach((list) => {
+      const maxItems = parseStoredNumber(list.dataset.maxItems);
+      const rows = Array.from(list.querySelectorAll(":scope > [data-repo-row]"))
+        .map((row) => ({
+          currentRank: parseStoredNumber(row.dataset.currentRank),
+          periodRank: periodValue(row, "periodRankings", periodId),
+          starsGained: periodValue(row, "periodStarsGained", periodId),
+          row
+        }))
+        .sort((left, right) => {
+          if (left.periodRank === null) {
+            return right.periodRank === null
+              ? (left.currentRank || 0) - (right.currentRank || 0)
+              : 1;
+          }
 
-      const movements = parseMovements(pill);
-      const hasPeriodRank = Object.prototype.hasOwnProperty.call(movements, periodId);
-      const previousRank = hasPeriodRank
-        ? normalizeRank(movements[periodId])
-        : parseStoredRank(pill.dataset.previousRank);
-      const movement = formatMovement(rank, previousRank);
+          return right.periodRank === null
+            ? -1
+            : left.periodRank - right.periodRank;
+        });
 
-      toneClasses.forEach((className) => pill.classList.remove(className));
-      pill.classList.add(`movement-${movement.tone}`);
-      pill.textContent = movement.label;
-      pill.setAttribute("aria-label", `Mouvement: ${movement.label}`);
+      rows.forEach(({ periodRank, starsGained, row }, index) => {
+        const rank = row.querySelector("[data-period-rank]");
+        const pill = row.querySelector("[data-stars-gained]");
+        const formattedStars = formatStarsGained(starsGained);
+
+        list.appendChild(row);
+        row.hidden = maxItems !== null && index >= maxItems;
+
+        if (rank) {
+          rank.textContent =
+            periodRank === null ? "#—" : `#${integerFormatter.format(periodRank)}`;
+        }
+
+        if (pill) {
+          toneClasses.forEach((className) => pill.classList.remove(className));
+          pill.classList.add(`movement-${formattedStars.tone}`);
+          pill.textContent = formattedStars.label;
+          pill.setAttribute(
+            "aria-label",
+            starsGained === null
+              ? "Étoiles gagnées: historique non suivi"
+              : `Étoiles gagnées: ${integerFormatter.format(starsGained)}`
+          );
+        }
+      });
+
+      list.setAttribute(
+        "aria-label",
+        `Classement par étoiles gagnées sur ${context.label}`
+      );
     });
+  };
+
+  const updatePeriodContext = (periodId) => {
+    const context = periodContext(periodId);
+
+    document.querySelectorAll("[data-period-status]").forEach((status) => {
+      status.textContent =
+        `Classement par étoiles gagnées · ${context.label} · ${context.baselineLabel}`;
+    });
+
+    document.querySelectorAll("[data-period-rank-heading]").forEach((heading) => {
+      heading.textContent = `Rank · ${context.label}`;
+    });
+
+    document
+      .querySelectorAll("[data-period-column-heading]")
+      .forEach((heading) => {
+        heading.textContent = `Gagnés · ${context.label}`;
+      });
   };
 
   const applyPeriod = (periodId, options = {}) => {
@@ -164,7 +240,8 @@
       button.setAttribute("aria-checked", String(selected));
     });
 
-    updatePills(periodId);
+    updateLists(periodId);
+    updatePeriodContext(periodId);
 
     if (options.persist) {
       storePeriod(periodId);

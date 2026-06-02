@@ -142,6 +142,54 @@ def build_rank_index(items: Sequence[Mapping[str, Any]]) -> dict[RepositoryKey, 
     }
 
 
+def build_period_performance(
+    items: Sequence[Mapping[str, Any]],
+    baseline_items: Sequence[Mapping[str, Any]] | None,
+) -> dict[RepositoryKey, dict[str, int | None]]:
+    """Rank tracked repositories by stars gained since a historical snapshot."""
+    if baseline_items is None:
+        return {
+            repository_key(item): {"rank": None, "starsGained": None} for item in items
+        }
+
+    baseline_by_key = {repository_key(item): item for item in baseline_items}
+    performance: dict[RepositoryKey, dict[str, int | None]] = {}
+    ranked_items: list[tuple[RepositoryKey, int, int, int]] = []
+
+    for fallback_rank, item in enumerate(items, start=1):
+        key = repository_key(item)
+        baseline_item = baseline_by_key.get(key)
+        baseline_stars = (
+            to_int_or_none(baseline_item.get("stargazers_count"))
+            if baseline_item is not None
+            else None
+        )
+        current_stars = to_int_or_none(item.get("stargazers_count"))
+        stars_gained = (
+            current_stars - baseline_stars
+            if current_stars is not None and baseline_stars is not None
+            else None
+        )
+        performance[key] = {"rank": None, "starsGained": stars_gained}
+
+        if stars_gained is not None:
+            ranked_items.append(
+                (
+                    key,
+                    stars_gained,
+                    current_stars or 0,
+                    rank_from_item(item, fallback_rank),
+                )
+            )
+
+    ranked_items.sort(key=lambda entry: (-entry[1], -entry[2], entry[3]))
+
+    for period_rank, (key, _, _, _) in enumerate(ranked_items, start=1):
+        performance[key]["rank"] = period_rank
+
+    return performance
+
+
 def explicit_previous_rank_for(item: Mapping[str, Any]) -> int | None:
     """Return an item's explicit previous rank, if the source snapshot provides one."""
     explicit_previous_rank = to_int_or_none(item.get("previous_rank"))
@@ -171,11 +219,28 @@ def movement_rank_for(
     return None if previous_ranks is None else previous_ranks.get(repository_key(item))
 
 
+def period_value_for(
+    item: Mapping[str, Any],
+    period_performance: Mapping[str, Mapping[RepositoryKey, Mapping[str, int | None]]]
+    | None,
+    field: str,
+) -> dict[str, int | None]:
+    """Return one period performance field for a repository."""
+    key = repository_key(item)
+
+    return {
+        period_id: performance.get(key, {}).get(field)
+        for period_id, performance in (period_performance or {}).items()
+    }
+
+
 def to_camel_repository(
     item: Mapping[str, Any],
     fallback_rank: int,
     previous_ranks: Mapping[RepositoryKey, int] | None = None,
     period_rank_indexes: Mapping[str, Mapping[RepositoryKey, int] | None] | None = None,
+    period_performance: Mapping[str, Mapping[RepositoryKey, Mapping[str, int | None]]]
+    | None = None,
 ) -> dict[str, Any]:
     """Normalize repository records for the TypeScript frontend contract."""
     full_name = str(item["full_name"])
@@ -190,6 +255,8 @@ def to_camel_repository(
             period_id: movement_rank_for(item, rank_index)
             for period_id, rank_index in (period_rank_indexes or {}).items()
         },
+        "periodRankings": period_value_for(item, period_performance, "rank"),
+        "periodStarsGained": period_value_for(item, period_performance, "starsGained"),
         "fullName": full_name,
         "owner": owner,
         "name": name or full_name,
@@ -434,6 +501,30 @@ def category_period_rank_indexes(
     return period_ranks
 
 
+def category_period_performance(
+    items: Sequence[Mapping[str, Any]],
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    tag: str,
+) -> dict[str, dict[RepositoryKey, dict[str, int | None]]]:
+    """Rank tracked category repositories by stars gained for every period."""
+    performance: dict[str, dict[RepositoryKey, dict[str, int | None]]] = {}
+
+    for period_id, snapshot in period_snapshots.items():
+        previous_categories = snapshot.get("categories", {}) if snapshot else {}
+        previous_category = previous_categories.get(tag)
+        previous_items = (
+            previous_category.get("items")
+            if isinstance(previous_category, Mapping)
+            else None
+        )
+        performance[period_id] = build_period_performance(
+            items,
+            previous_items if isinstance(previous_items, list) else None,
+        )
+
+    return performance
+
+
 def global_period_rank_indexes(
     period_snapshots: Mapping[str, Mapping[str, Any] | None],
 ) -> dict[str, dict[RepositoryKey, int] | None]:
@@ -448,6 +539,20 @@ def global_period_rank_indexes(
         period_ranks[period_id] = build_rank_index(snapshot["global"]["items"])
 
     return period_ranks
+
+
+def global_period_performance(
+    items: Sequence[Mapping[str, Any]],
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+) -> dict[str, dict[RepositoryKey, dict[str, int | None]]]:
+    """Rank tracked global repositories by stars gained for every period."""
+    return {
+        period_id: build_period_performance(
+            items,
+            snapshot["global"]["items"] if snapshot is not None else None,
+        )
+        for period_id, snapshot in period_snapshots.items()
+    }
 
 
 def build_period_metadata(
@@ -500,9 +605,19 @@ def build_site_payload(
         else {period.id: previous_snapshot for period in PERIODS}
     )
     global_period_ranks = global_period_rank_indexes(selected_period_snapshots)
+    global_performance = global_period_performance(
+        snapshot["global"]["items"],
+        selected_period_snapshots,
+    )
 
     global_items = [
-        to_camel_repository(item, index, global_previous_ranks, global_period_ranks)
+        to_camel_repository(
+            item,
+            index,
+            global_previous_ranks,
+            global_period_ranks,
+            global_performance,
+        )
         for index, item in enumerate(snapshot["global"]["items"], start=1)
     ]
     categories = []
@@ -510,6 +625,12 @@ def build_site_payload(
     for index, category in enumerate(CATEGORIES):
         previous_ranks = category_rank_index(previous_categories, category.tag)
         period_ranks = category_period_rank_indexes(
+            selected_period_snapshots,
+            category.tag,
+        )
+        category_items = snapshot_categories[category.tag]["items"]
+        period_performance = category_period_performance(
+            category_items,
             selected_period_snapshots,
             category.tag,
         )
@@ -521,9 +642,15 @@ def build_site_payload(
                 "description": build_category_description(category.title),
                 "accent": CATEGORY_ACCENTS[index % len(CATEGORY_ACCENTS)],
                 "items": [
-                    to_camel_repository(item, item_index, previous_ranks, period_ranks)
+                    to_camel_repository(
+                        item,
+                        item_index,
+                        previous_ranks,
+                        period_ranks,
+                        period_performance,
+                    )
                     for item_index, item in enumerate(
-                        snapshot_categories[category.tag]["items"],
+                        category_items,
                         start=1,
                     )
                 ],

@@ -115,6 +115,8 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
     assert payload["global"]["items"][0]["owner"] == "owner"
     assert payload["global"]["items"][0]["name"] == "global-one"
     assert payload["global"]["items"][0]["movements"] == _empty_movements()
+    assert payload["global"]["items"][0]["periodRankings"] == _empty_movements()
+    assert payload["global"]["items"][0]["periodStarsGained"] == _empty_movements()
     assert payload["periods"][0]["id"] == "7d"
     assert payload["periods"][0]["available"] is False
     assert payload["periods"][-1]["id"] == "all"
@@ -134,6 +136,8 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
                     "rank": 1,
                     "previousRank": None,
                     "movements": _empty_movements(),
+                    "periodRankings": _empty_movements(),
+                    "periodStarsGained": _empty_movements(),
                     "fullName": "owner/python-lib",
                     "owner": "owner",
                     "name": "python-lib",
@@ -159,6 +163,8 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
                     "rank": 1,
                     "previousRank": None,
                     "movements": _empty_movements(),
+                    "periodRankings": _empty_movements(),
+                    "periodStarsGained": _empty_movements(),
                     "fullName": "owner/react-app",
                     "owner": "owner",
                     "name": "react-app",
@@ -210,10 +216,56 @@ def test_build_site_payload_uses_previous_snapshot_for_rank_movements(export_con
 
     assert payload["global"]["items"][0]["previousRank"] == 4
     assert payload["global"]["items"][0]["movements"]["7d"] == 4
+    assert payload["global"]["items"][0]["periodRankings"]["7d"] == 1
+    assert payload["global"]["items"][0]["periodStarsGained"]["7d"] == 0
     assert payload["categories"][0]["items"][0]["previousRank"] == 2
     assert payload["categories"][0]["items"][0]["movements"]["7d"] == 2
+    assert payload["categories"][0]["items"][0]["periodRankings"]["7d"] == 1
+    assert payload["categories"][0]["items"][0]["periodStarsGained"]["7d"] == 0
     assert payload["categories"][1]["items"][0]["previousRank"] is None
     assert payload["categories"][1]["items"][0]["movements"]["7d"] is None
+    assert payload["categories"][1]["items"][0]["periodRankings"]["7d"] is None
+    assert payload["categories"][1]["items"][0]["periodStarsGained"]["7d"] is None
+
+
+def test_build_site_payload_ranks_repositories_by_period_star_gains(export_config):
+    snapshot = _make_snapshot()
+    snapshot["global"]["items"].append(
+        {
+            "id": 4,
+            "full_name": "owner/global-two",
+            "html_url": "https://github.com/owner/global-two",
+            "stargazers_count": 90,
+            "language": "Python",
+            "description": "Second global repository",
+            "rank": 2,
+        }
+    )
+    previous_snapshot = _make_snapshot()
+    previous_snapshot["captured_at"] = "2026-04-03T07:36:12Z"
+    previous_snapshot["global"]["items"][0]["stargazers_count"] = 99
+    previous_snapshot["global"]["items"].append(
+        {
+            "id": 4,
+            "full_name": "owner/global-two",
+            "html_url": "https://github.com/owner/global-two",
+            "stargazers_count": 70,
+            "language": "Python",
+            "description": "Second global repository",
+            "rank": 2,
+        }
+    )
+
+    payload = exporter.build_site_payload(
+        snapshot,
+        previous_snapshot=previous_snapshot,
+    )
+    repositories = {item["fullName"]: item for item in payload["global"]["items"]}
+
+    assert repositories["owner/global-two"]["periodRankings"]["7d"] == 1
+    assert repositories["owner/global-two"]["periodStarsGained"]["7d"] == 20
+    assert repositories["owner/global-one"]["periodRankings"]["7d"] == 2
+    assert repositories["owner/global-one"]["periodStarsGained"]["7d"] == 1
 
 
 def test_build_site_payload_raises_when_snapshot_tags_drift(export_config):
@@ -325,6 +377,10 @@ def test_export_site_data_uses_latest_history_before_current_snapshot(
     assert payload["global"]["items"][0]["previousRank"] == 3
     assert payload["global"]["items"][0]["movements"]["7d"] == 11
     assert payload["global"]["items"][0]["movements"]["all"] == 20
+    assert payload["global"]["items"][0]["periodRankings"]["7d"] == 1
+    assert payload["global"]["items"][0]["periodRankings"]["all"] == 1
+    assert payload["global"]["items"][0]["periodStarsGained"]["7d"] == 0
+    assert payload["global"]["items"][0]["periodStarsGained"]["all"] == 0
     assert payload["periods"][0]["baselineCapturedAt"] == "2026-03-28T07:36:12Z"
     assert payload["periods"][-1]["baselineCapturedAt"] == "2026-03-01T07:36:12Z"
 
