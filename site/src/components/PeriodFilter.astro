@@ -10,6 +10,10 @@ interface Props {
 const { periods, defaultPeriod = null } = Astro.props;
 const availablePeriods = periods.filter((period) => period.available);
 const selectedPeriod = defaultPeriod ?? availablePeriods[0]?.id ?? "";
+const selectedPeriodOption = periods.find((period) => period.id === selectedPeriod);
+const selectedBaselineLabel = selectedPeriodOption?.baselineCapturedAt
+  ? `Référence ${formatSnapshotDate(selectedPeriodOption.baselineCapturedAt)}`
+  : "Historique indisponible";
 ---
 
 {
@@ -19,7 +23,14 @@ const selectedPeriod = defaultPeriod ?? availablePeriods[0]?.id ?? "";
       data-period-filter
       data-default-period={selectedPeriod}
     >
-      <span class="period-filter-label">Période</span>
+      <div class="period-filter-copy">
+        <span class="period-filter-label">Comparaison</span>
+        <p class="period-filter-status" data-period-status aria-live="polite">
+          {selectedPeriodOption
+            ? `${selectedPeriodOption.label} · ${selectedBaselineLabel}`
+            : selectedBaselineLabel}
+        </p>
+      </div>
       <div class="period-options" role="radiogroup" aria-label="Période de comparaison">
         {periods.map((period) => {
           const isSelected = period.available && period.id === selectedPeriod;
@@ -36,6 +47,8 @@ const selectedPeriod = defaultPeriod ?? availablePeriods[0]?.id ?? "";
               aria-label={`${period.label}. ${baselineLabel}.`}
               data-period-button
               data-period-id={period.id}
+              data-period-label={period.label}
+              data-baseline-label={baselineLabel}
               disabled={!period.available}
               title={baselineLabel}
             >

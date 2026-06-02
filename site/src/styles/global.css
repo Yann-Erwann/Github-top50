@@ -405,12 +405,24 @@ select {
 }
 
 .period-filter-label {
-  flex: 0 0 auto;
-  margin-left: 0.35rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.period-filter-copy {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0.18rem;
+  margin-left: 0.35rem;
+}
+
+.period-filter-status {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
@@ -701,7 +713,7 @@ select {
     flex-direction: column;
   }
 
-  .period-filter-label {
+  .period-filter-copy {
     margin-left: 0;
   }
 

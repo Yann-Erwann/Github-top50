@@ -15,7 +15,7 @@ const { items, id, compact = false, defaultPeriod = null } = Astro.props;
 <div class:list={["repo-list-shell", compact && "is-compact"]}>
   <div class="repo-list-head" aria-hidden="true">
     <span>Rank</span>
-    <span>Move</span>
+    <span data-period-column-heading>Move</span>
     <span>Repository</span>
     <span>Langage</span>
     <span>Stars</span>
