@@ -143,6 +143,7 @@ select {
 .site-header,
 .site-footer,
 .card-surface,
+.period-filter,
 .repo-list-shell,
 .category-section {
   backdrop-filter: blur(16px);
@@ -209,6 +210,7 @@ select {
 .nav-link,
 .category-chip,
 .button-secondary,
+.period-button,
 .theme-toggle {
   border: 1px solid var(--surface-border);
   border-radius: 999px;
@@ -228,6 +230,8 @@ select {
 .category-chip:focus-visible,
 .button-secondary:hover,
 .button-secondary:focus-visible,
+.period-button:not(:disabled):hover,
+.period-button:not(:disabled):focus-visible,
 .theme-toggle:hover,
 .theme-toggle:focus-visible,
 .repo-link:hover,
@@ -240,6 +244,12 @@ select {
 }
 
 .nav-link.is-active {
+  color: var(--text);
+  background: var(--accent-glow);
+  border-color: rgba(11, 140, 255, 0.36);
+}
+
+.period-button.is-active {
   color: var(--text);
   background: var(--accent-glow);
   border-color: rgba(11, 140, 255, 0.36);
@@ -380,6 +390,50 @@ select {
 .category-sections {
   display: grid;
   gap: 1.2rem;
+}
+
+.period-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.7rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--surface-shadow);
+}
+
+.period-filter-label {
+  flex: 0 0 auto;
+  margin-left: 0.35rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.period-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.period-button {
+  min-width: 3.75rem;
+  min-height: 2.35rem;
+  padding: 0.58rem 0.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.period-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .section-heading {
@@ -642,6 +696,23 @@ select {
     display: none;
   }
 
+  .period-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .period-filter-label {
+    margin-left: 0;
+  }
+
+  .period-options {
+    justify-content: flex-start;
+  }
+
+  .period-button {
+    flex: 1 1 calc(33.333% - 0.4rem);
+  }
+
   .repo-row {
     grid-template-columns: 1fr;
     gap: 0.8rem;
@@ -676,6 +747,7 @@ select {
   .site-header,
   .site-footer,
   .card-surface,
+  .period-filter,
   .repo-list-shell,
   .category-section {
     backdrop-filter: none;
@@ -689,6 +761,7 @@ select {
   .category-preview-card,
   .hosting-card,
   .category-section,
+  .period-filter,
   .repo-list-shell {
     box-shadow: none;
   }

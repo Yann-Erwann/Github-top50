@@ -6,9 +6,10 @@ interface Props {
   items: RepositoryEntry[];
   id?: string;
   compact?: boolean;
+  defaultPeriod?: string | null;
 }
 
-const { items, id, compact = false } = Astro.props;
+const { items, id, compact = false, defaultPeriod = null } = Astro.props;
 ---
 
 <div class:list={["repo-list-shell", compact && "is-compact"]}>
@@ -23,7 +24,12 @@ const { items, id, compact = false } = Astro.props;
   <div id={id} class="repo-list">
     {
       items.map((item) => {
-        const movement = formatMovement(item.rank, item.previousRank);
+        const periodPreviousRank =
+          defaultPeriod &&
+          Object.prototype.hasOwnProperty.call(item.movements, defaultPeriod)
+            ? item.movements[defaultPeriod]
+            : item.previousRank;
+        const movement = formatMovement(item.rank, periodPreviousRank);
         const [owner, repositoryName] = item.fullName.split("/");
 
         return (
@@ -31,7 +37,14 @@ const { items, id, compact = false } = Astro.props;
             class="repo-row"
           >
             <div class="repo-rank">#{formatInteger(item.rank)}</div>
-            <div class:list={["movement-pill", `movement-${movement.tone}`]}>
+            <div
+              class:list={["movement-pill", `movement-${movement.tone}`]}
+              data-movement-pill
+              data-rank={item.rank}
+              data-previous-rank={item.previousRank ?? ""}
+              data-movements={JSON.stringify(item.movements)}
+              aria-label={`Mouvement: ${movement.label}`}
+            >
               {movement.label}
             </div>
             <div class="repo-main">

@@ -1,5 +1,6 @@
 ---
 import HostingGrid from "../components/HostingGrid.astro";
+import PeriodFilter from "../components/PeriodFilter.astro";
 import RepositoryList from "../components/RepositoryList.astro";
 import StatCard from "../components/StatCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
@@ -9,6 +10,7 @@ import { withBase } from "../utils/routes";
 
 const data = await getSiteData();
 const highlightedCategories = data.categories.slice(0, 6);
+const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
 const datasetStructuredData = {
   "@context": "https://schema.org",
   "@type": "Dataset",
@@ -104,7 +106,12 @@ const datasetStructuredData = {
       <p class="eyebrow">Top highlights</p>
       <h2>Repositories les plus visibles du moment</h2>
     </div>
-    <RepositoryList items={data.global.highlights} compact={true} />
+    <PeriodFilter periods={data.periods} defaultPeriod={defaultPeriod} />
+    <RepositoryList
+      items={data.global.highlights}
+      compact={true}
+      defaultPeriod={defaultPeriod}
+    />
   </section>
 
   <section class="section-block">

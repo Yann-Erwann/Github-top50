@@ -5,6 +5,7 @@ export interface RepositoryEntry {
   id?: number;
   rank: number;
   previousRank: number | null;
+  movements: Record<string, number | null>;
   fullName: string;
   htmlUrl: string;
   stargazersCount: number;
@@ -16,6 +17,15 @@ export interface SnapshotInfo {
   capturedAt: string;
   label: string | null;
   source: string | null;
+}
+
+export interface PeriodOption {
+  id: string;
+  label: string;
+  days: number | null;
+  months: number | null;
+  available: boolean;
+  baselineCapturedAt: string | null;
 }
 
 export interface GlobalData {
@@ -58,6 +68,7 @@ export interface StatsSummary {
 
 export interface SiteData {
   snapshot: SnapshotInfo;
+  periods: PeriodOption[];
   global: GlobalData;
   categories: CategoryEntry[];
   hosting: HostingRecommendation[];
@@ -117,6 +128,31 @@ function toInteger(value: unknown, fallback = 0): number {
   return Math.trunc(toNumber(value, fallback));
 }
 
+function toNullableInteger(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.trunc(value)
+    : null;
+}
+
+function normalizeMovements(value: unknown): Record<string, number | null> {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  const movements: Record<string, number | null> = {};
+
+  for (const [periodId, previousRank] of Object.entries(value)) {
+    if (periodId.length === 0) {
+      continue;
+    }
+
+    movements[periodId] =
+      previousRank === null ? null : toNullableInteger(previousRank);
+  }
+
+  return movements;
+}
+
 function normalizeRepository(
   value: unknown,
   fallbackRank: number
@@ -132,6 +168,7 @@ function normalizeRepository(
         : typeof record.previous_rank === "number"
           ? Math.trunc(record.previous_rank)
           : null,
+    movements: normalizeMovements(record.movements),
     fullName: toString(
       record.fullName ?? record.full_name,
       `unknown/repository-${fallbackRank}`
@@ -192,6 +229,33 @@ function normalizeCategories(value: unknown): CategoryEntry[] {
       tag
     );
   });
+}
+
+function normalizePeriod(value: unknown, index: number): PeriodOption {
+  const record = isRecord(value) ? value : {};
+  const baselineCapturedAt = toNullableString(
+    record.baselineCapturedAt ?? record.baseline_captured_at
+  );
+
+  return {
+    id: toString(record.id, `period-${index + 1}`),
+    label: toString(record.label, `Période ${index + 1}`),
+    days: toNullableInteger(record.days),
+    months: toNullableInteger(record.months),
+    available:
+      typeof record.available === "boolean"
+        ? record.available
+        : baselineCapturedAt !== null,
+    baselineCapturedAt
+  };
+}
+
+function normalizePeriods(value: unknown): PeriodOption[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item, index) => normalizePeriod(item, index));
 }
 
 function normalizeHosting(value: unknown): HostingRecommendation[] {
@@ -308,6 +372,7 @@ function normalizeSiteData(payload: unknown): SiteData {
     : globalItems.slice(0, 3);
   const categories = normalizeCategories(root.categories);
   const hosting = normalizeHosting(root.hosting);
+  const periods = normalizePeriods(root.periods);
   const global: GlobalData = {
     title: toString(globalRecord.title, "Global signal"),
     subtitle: toString(
@@ -327,6 +392,7 @@ function normalizeSiteData(payload: unknown): SiteData {
       label: toNullableString(snapshotRecord.label),
       source: toNullableString(snapshotRecord.source)
     },
+    periods,
     global,
     categories,
     hosting,
