@@ -2,22 +2,23 @@
 import PeriodFilter from "../components/PeriodFilter.astro";
 import RepositoryList from "../components/RepositoryList.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getSiteData } from "../data/site-data";
+import { getSiteData, sortRepositoriesByPeriod } from "../data/site-data";
 import { formatInteger } from "../utils/format";
 
 const data = await getSiteData();
 const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
+const defaultPeriodRepositories = sortRepositoriesByPeriod(data.global.items, defaultPeriod);
 const topRepositoriesStructuredData = {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  name: "Top 50 repositories GitHub par nombre de stars",
+  name: "Top 50 repositories GitHub suivis par étoiles gagnées",
   description:
-    "Classement des 50 repositories GitHub les plus suivis, trie par nombre de stars et enrichi avec langage, description et mouvement de rang.",
+    "Classement des repositories GitHub suivis selon les étoiles gagnées depuis le snapshot de référence, avec langage, description et total de stars.",
   numberOfItems: data.global.items.length,
   itemListOrder: "https://schema.org/ItemListOrderDescending",
-  itemListElement: data.global.items.map((item) => ({
+  itemListElement: defaultPeriodRepositories.map((item, index) => ({
     "@type": "ListItem",
-    position: item.rank,
+    position: index + 1,
     name: item.fullName,
     url: item.htmlUrl,
     description: item.description ?? undefined
@@ -27,7 +28,7 @@ const topRepositoriesStructuredData = {
 
 <BaseLayout
   title="Classement GitHub Stars"
-  description="Consultez le top 50 des repositories GitHub les plus étoilés avec rang, stars, langage principal et signaux de popularité open source."
+  description="Consultez les repositories GitHub suivis classés par étoiles gagnées sur la période sélectionnée, avec rang, total de stars et langage principal."
   currentPath="/top/"
   pageType="CollectionPage"
   structuredData={topRepositoriesStructuredData}
@@ -37,7 +38,8 @@ const topRepositoriesStructuredData = {
       <p class="eyebrow">Top 50 global</p>
       <h1>Classement principal des repositories GitHub</h1>
       <p class="page-intro">
-        Explore le classement principal et repère les repositories les plus visibles du snapshot.
+        Sélectionne une période pour classer les repositories suivis selon les étoiles gagnées
+        depuis le snapshot de référence.
       </p>
     </div>
     <div class="page-hero-side card-surface">

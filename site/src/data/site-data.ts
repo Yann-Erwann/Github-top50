@@ -6,6 +6,8 @@ export interface RepositoryEntry {
   rank: number;
   previousRank: number | null;
   movements: Record<string, number | null>;
+  periodRankings: Record<string, number | null>;
+  periodStarsGained: Record<string, number | null>;
   fullName: string;
   htmlUrl: string;
   stargazersCount: number;
@@ -75,6 +77,26 @@ export interface SiteData {
   stats: StatsSummary;
 }
 
+export function sortRepositoriesByPeriod(
+  items: RepositoryEntry[],
+  periodId: string | null
+): RepositoryEntry[] {
+  return [...items].sort((left, right) => {
+    const leftRank = periodId ? left.periodRankings[periodId] : null;
+    const rightRank = periodId ? right.periodRankings[periodId] : null;
+
+    if (leftRank === null || leftRank === undefined) {
+      return rightRank === null || rightRank === undefined
+        ? left.rank - right.rank
+        : 1;
+    }
+
+    return rightRank === null || rightRank === undefined
+      ? -1
+      : leftRank - rightRank;
+  });
+}
+
 const DATA_FILE = resolve(process.cwd(), "public/data/site-data.json");
 const GITHUB_HOSTS = ["github.com"];
 const HOSTING_DOC_HOSTS = ["render.com", "vercel.com"];
@@ -134,23 +156,25 @@ function toNullableInteger(value: unknown): number | null {
     : null;
 }
 
-function normalizeMovements(value: unknown): Record<string, number | null> {
+function normalizeNullableIntegerRecord(
+  value: unknown
+): Record<string, number | null> {
   if (!isRecord(value)) {
     return {};
   }
 
-  const movements: Record<string, number | null> = {};
+  const normalized: Record<string, number | null> = {};
 
-  for (const [periodId, previousRank] of Object.entries(value)) {
+  for (const [periodId, rawValue] of Object.entries(value)) {
     if (periodId.length === 0) {
       continue;
     }
 
-    movements[periodId] =
-      previousRank === null ? null : toNullableInteger(previousRank);
+    normalized[periodId] =
+      rawValue === null ? null : toNullableInteger(rawValue);
   }
 
-  return movements;
+  return normalized;
 }
 
 function normalizeRepository(
@@ -168,7 +192,13 @@ function normalizeRepository(
         : typeof record.previous_rank === "number"
           ? Math.trunc(record.previous_rank)
           : null,
-    movements: normalizeMovements(record.movements),
+    movements: normalizeNullableIntegerRecord(record.movements),
+    periodRankings: normalizeNullableIntegerRecord(
+      record.periodRankings ?? record.period_rankings
+    ),
+    periodStarsGained: normalizeNullableIntegerRecord(
+      record.periodStarsGained ?? record.period_stars_gained
+    ),
     fullName: toString(
       record.fullName ?? record.full_name,
       `unknown/repository-${fallbackRank}`
