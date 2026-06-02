@@ -10,6 +10,7 @@ from github_top50.config import (
     HISTORY_DIR,
     LATEST_SNAPSHOT_PATH,
     PER_PAGE,
+    PERIODS,
     README_PATH,
     START,
 )
@@ -37,6 +38,7 @@ __all__ = [
     "HISTORY_DIR",
     "LATEST_SNAPSHOT_PATH",
     "PER_PAGE",
+    "PERIODS",
     "README_PATH",
     "ReadmeSection",
     "Repository",

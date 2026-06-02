@@ -15,6 +15,7 @@ from github_top50.config import (
     HISTORY_DIR,
     LATEST_SNAPSHOT_PATH,
     PER_PAGE,
+    PERIODS,
     README_PATH,
     START,
 )
@@ -44,6 +45,7 @@ def build_use_case() -> GenerateTop50ReadmeUseCase:
         global_query=GLOBAL_QUERY,
         per_page=PER_PAGE,
         category_per_page=CATEGORY_PER_PAGE,
+        periods=PERIODS,
         snapshot_store=SnapshotStore(
             latest_snapshot_path=LATEST_SNAPSHOT_PATH,
             history_dir=HISTORY_DIR,

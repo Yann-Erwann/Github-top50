@@ -20,7 +20,7 @@ SleepFunc = Callable[[float], None]
 def build_headers(token: str | None = None) -> dict[str, str]:
     """Build GitHub API headers from an optional token."""
     headers = {"Accept": "application/vnd.github+json"}
-    resolved_token = token or os.getenv("GITHUB_TOKEN")
+    resolved_token = token or os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     if resolved_token:
         headers["Authorization"] = f"Bearer {resolved_token}"
     return headers

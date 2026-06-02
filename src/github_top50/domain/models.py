@@ -57,6 +57,17 @@ class HostingRecommendationDefinition:
 
 
 @dataclass(frozen=True, slots=True)
+class PeriodDefinition:
+    """A repository ranking period exposed by the static site."""
+
+    id: str
+    label: str
+    days: int | None = None
+    months: int | None = None
+    all_time: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class Repository:
     """Immutable repository data rendered into the README."""
 

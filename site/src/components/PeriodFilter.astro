@@ -5,15 +5,34 @@ import { formatSnapshotDate } from "../utils/format";
 interface Props {
   periods: PeriodOption[];
   defaultPeriod?: string | null;
+  trackedRepositoriesOnly?: boolean;
 }
 
-const { periods, defaultPeriod = null } = Astro.props;
+const {
+  periods,
+  defaultPeriod = null,
+  trackedRepositoriesOnly = false
+} = Astro.props;
 const availablePeriods = periods.filter((period) => period.available);
 const selectedPeriod = defaultPeriod ?? availablePeriods[0]?.id ?? "";
 const selectedPeriodOption = periods.find((period) => period.id === selectedPeriod);
-const selectedBaselineLabel = selectedPeriodOption?.baselineCapturedAt
-  ? `Référence ${formatSnapshotDate(selectedPeriodOption.baselineCapturedAt)}`
-  : "Historique indisponible";
+const formatPeriodContext = (period: PeriodOption | undefined) => {
+  if (trackedRepositoriesOnly) {
+    return period?.baselineCapturedAt
+      ? `Repositories suivis · référence ${formatSnapshotDate(period.baselineCapturedAt)}`
+      : "Historique indisponible";
+  }
+  if (period?.rankingMode === "created" && period.startsAt) {
+    return `Repositories créés depuis ${formatSnapshotDate(period.startsAt)}`;
+  }
+  if (period?.rankingMode === "all") {
+    return "Tous les repositories";
+  }
+  return period?.baselineCapturedAt
+    ? `Référence ${formatSnapshotDate(period.baselineCapturedAt)}`
+    : "Historique indisponible";
+};
+const selectedBaselineLabel = formatPeriodContext(selectedPeriodOption);
 ---
 
 {
@@ -34,9 +53,7 @@ const selectedBaselineLabel = selectedPeriodOption?.baselineCapturedAt
       <div class="period-options" role="radiogroup" aria-label="Période de comparaison">
         {periods.map((period) => {
           const isSelected = period.available && period.id === selectedPeriod;
-          const baselineLabel = period.baselineCapturedAt
-            ? `Référence ${formatSnapshotDate(period.baselineCapturedAt)}`
-            : "Historique indisponible";
+          const baselineLabel = formatPeriodContext(period);
 
           return (
             <button

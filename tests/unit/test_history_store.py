@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from github_top50.config import HISTORY_DIR, LATEST_SNAPSHOT_PATH
-from github_top50.domain.models import CategoryDefinition, Repository
+from github_top50.domain.models import CategoryDefinition, PeriodDefinition, Repository
 from github_top50.services.history_store import SnapshotStore, apply_rank_changes
 
 
@@ -69,12 +69,19 @@ def test_snapshot_store_round_trips_latest_snapshot(tmp_path):
             previous_category_items,
         )
     }
+    periods = (
+        PeriodDefinition(id="7d", label="7 jours", days=7),
+        PeriodDefinition(id="all", label="Toute la période", all_time=True),
+    )
+    period_items = {"7d": [_make_repo(repo_id=20, name="org/recent", rank=1)]}
 
     history_path = store.save(
         captured_at=datetime(2026, 3, 18, 6, 0, 0, tzinfo=timezone.utc),
         global_items=global_items,
         categories=categories,
         category_items=category_items,
+        periods=periods,
+        period_items=period_items,
     )
 
     latest = store.load_latest()
@@ -88,3 +95,7 @@ def test_snapshot_store_round_trips_latest_snapshot(tmp_path):
     assert latest.category_items["A"][0].full_name == "org/cat-a"
     assert latest.category_items["A"][0].rank == 1
     assert latest.category_items["A"][0].previous_rank == 2
+    assert latest.period_items["7d"][0].full_name == "org/recent"
+    payload = history_path.read_text(encoding="utf-8")
+    assert '"query": "created:>=2026-03-11"' in payload
+    assert '"starts_at": "2026-03-11T06:00:00Z"' in payload

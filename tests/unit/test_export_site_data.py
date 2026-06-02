@@ -14,6 +14,18 @@ def _empty_movements() -> dict[str, None]:
     return {period.id: None for period in exporter.PERIODS}
 
 
+def _global_period_rankings() -> dict[str, int | None]:
+    rankings = _empty_movements()
+    rankings["all"] = 1
+    return rankings
+
+
+def _global_period_stars(stars: int) -> dict[str, int | None]:
+    totals = _empty_movements()
+    totals["all"] = stars
+    return totals
+
+
 def _make_snapshot() -> dict[str, object]:
     return {
         "captured_at": "2026-04-04T07:36:12Z",
@@ -115,8 +127,10 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
     assert payload["global"]["items"][0]["owner"] == "owner"
     assert payload["global"]["items"][0]["name"] == "global-one"
     assert payload["global"]["items"][0]["movements"] == _empty_movements()
-    assert payload["global"]["items"][0]["periodRankings"] == _empty_movements()
-    assert payload["global"]["items"][0]["periodStarsGained"] == _empty_movements()
+    assert payload["global"]["items"][0]["periodRankings"] == _global_period_rankings()
+    assert payload["global"]["items"][0]["periodStarsGained"] == _global_period_stars(
+        100
+    )
     assert payload["periods"][0]["id"] == "7d"
     assert payload["periods"][0]["available"] is False
     assert payload["periods"][-1]["id"] == "all"
@@ -268,6 +282,47 @@ def test_build_site_payload_ranks_repositories_by_period_star_gains(export_confi
     assert repositories["owner/global-one"]["periodStarsGained"]["7d"] == 1
 
 
+def test_build_site_payload_uses_api_period_repositories_outside_global_top(
+    export_config,
+):
+    snapshot = _make_snapshot()
+    snapshot["periods"] = {
+        "7d": {
+            "label": "7 jours",
+            "query": "created:>=2026-03-28",
+            "starts_at": "2026-03-28T07:36:12Z",
+            "items": [
+                {
+                    "id": 99,
+                    "full_name": "owner/recent-hit",
+                    "html_url": "https://github.com/owner/recent-hit",
+                    "stargazers_count": 1234,
+                    "language": "TypeScript",
+                    "description": "Recent repository",
+                    "rank": 1,
+                }
+            ],
+        }
+    }
+
+    payload = exporter.build_site_payload(snapshot)
+    repositories = {item["fullName"]: item for item in payload["global"]["items"]}
+
+    assert [item["fullName"] for item in payload["global"]["items"]] == [
+        "owner/global-one",
+        "owner/recent-hit",
+    ]
+    assert repositories["owner/recent-hit"]["periodRankings"]["7d"] == 1
+    assert repositories["owner/recent-hit"]["periodStarsGained"]["7d"] == 1234
+    assert repositories["owner/recent-hit"]["periodRankings"]["all"] is None
+    assert payload["periods"][0]["available"] is True
+    assert payload["periods"][0]["startsAt"] == "2026-03-28T07:36:12Z"
+    assert payload["periods"][0]["rankingMode"] == "created"
+    assert payload["periods"][-1]["rankingMode"] == "all"
+    assert payload["stats"]["repositoryCount"] == 1
+    assert payload["stats"]["totalStars"] == 100
+
+
 def test_build_site_payload_raises_when_snapshot_tags_drift(export_config):
     snapshot = _make_snapshot()
     snapshot["categories"] = {"PYTHON": snapshot["categories"]["PYTHON"]}
@@ -380,7 +435,7 @@ def test_export_site_data_uses_latest_history_before_current_snapshot(
     assert payload["global"]["items"][0]["periodRankings"]["7d"] == 1
     assert payload["global"]["items"][0]["periodRankings"]["all"] == 1
     assert payload["global"]["items"][0]["periodStarsGained"]["7d"] == 0
-    assert payload["global"]["items"][0]["periodStarsGained"]["all"] == 0
+    assert payload["global"]["items"][0]["periodStarsGained"]["all"] == 100
     assert payload["periods"][0]["baselineCapturedAt"] == "2026-03-28T07:36:12Z"
     assert payload["periods"][-1]["baselineCapturedAt"] == "2026-03-01T07:36:12Z"
 

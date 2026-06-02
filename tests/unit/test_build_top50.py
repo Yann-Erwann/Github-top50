@@ -14,6 +14,7 @@ from github_top50.domain.models import (
     HostingRecommendationDefinition,
     to_hosting_recommendation,
 )
+from github_top50.services.github_client import build_headers
 from github_top50.services.readme_builder import (
     HOSTING_TITLE,
     build_hosting_section,
@@ -283,6 +284,15 @@ class TestHostingRecommendationNormalization:
 
 
 class TestSearchRepos:
+    def test_build_headers_uses_gh_token_fallback(self, monkeypatch):
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        monkeypatch.setenv("GH_TOKEN", "test-token")
+
+        assert build_headers() == {
+            "Accept": "application/vnd.github+json",
+            "Authorization": "Bearer test-token",
+        }
+
     @patch("scripts.build_top50.requests.get")
     def test_returns_items(self, mock_get):
         mock_resp = MagicMock()

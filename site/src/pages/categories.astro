@@ -50,7 +50,11 @@ const categoriesStructuredData = {
         ))
       }
     </nav>
-    <PeriodFilter periods={data.periods} defaultPeriod={defaultPeriod} />
+    <PeriodFilter
+      periods={data.periods}
+      defaultPeriod={defaultPeriod}
+      trackedRepositoriesOnly={true}
+    />
   </section>
 
   <section class="category-sections">
