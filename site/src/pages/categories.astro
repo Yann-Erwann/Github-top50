@@ -5,7 +5,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getSiteData } from "../data/site-data";
 
 const data = await getSiteData();
-const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
+const defaultPeriod =
+  data.periods.find((period) => period.id === "all" && period.available)?.id ??
+  data.periods.find((period) => period.available)?.id ??
+  null;
 const categoriesStructuredData = {
   "@context": "https://schema.org",
   "@type": "ItemList",

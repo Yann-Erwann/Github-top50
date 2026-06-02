@@ -6,7 +6,10 @@ import { getSiteData, sortRepositoriesByPeriod } from "../data/site-data";
 import { formatInteger } from "../utils/format";
 
 const data = await getSiteData();
-const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
+const defaultPeriod =
+  data.periods.find((period) => period.id === "all" && period.available)?.id ??
+  data.periods.find((period) => period.available)?.id ??
+  null;
 const defaultPeriodRepositories = sortRepositoriesByPeriod(
   data.global.items,
   defaultPeriod

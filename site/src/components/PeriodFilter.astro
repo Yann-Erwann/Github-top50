@@ -14,7 +14,11 @@ const {
   trackedRepositoriesOnly = false
 } = Astro.props;
 const availablePeriods = periods.filter((period) => period.available);
-const selectedPeriod = defaultPeriod ?? availablePeriods[0]?.id ?? "";
+const selectedPeriod =
+  defaultPeriod ??
+  availablePeriods.find((period) => period.id === "all")?.id ??
+  availablePeriods[0]?.id ??
+  "";
 const selectedPeriodOption = periods.find((period) => period.id === selectedPeriod);
 const formatPeriodContext = (period: PeriodOption | undefined) => {
   if (trackedRepositoriesOnly) {
