@@ -1,6 +1,6 @@
 ---
 import { sortRepositoriesByPeriod, type RepositoryEntry } from "../data/site-data";
-import { formatCompactNumber, formatStarsGained, formatInteger } from "../utils/format";
+import { formatCompactNumber, formatPeriodStars, formatInteger } from "../utils/format";
 
 interface Props {
   items: RepositoryEntry[];
@@ -17,10 +17,10 @@ const visibleItems = sortRepositoriesByPeriod(items, defaultPeriod);
 <div class:list={["repo-list-shell", compact && "is-compact"]}>
   <div class="repo-list-head" aria-hidden="true">
     <span data-period-rank-heading>Rank</span>
-    <span data-period-column-heading>Gagnés</span>
+    <span data-period-column-heading>Stars période</span>
     <span>Repository</span>
     <span>Langage</span>
-    <span>Stars</span>
+    <span>Total GitHub</span>
   </div>
 
   <div id={id} class="repo-list" data-repo-list data-max-items={limit}>
@@ -36,7 +36,7 @@ const visibleItems = sortRepositoriesByPeriod(items, defaultPeriod);
           Object.prototype.hasOwnProperty.call(item.periodStarsGained, defaultPeriod)
             ? item.periodStarsGained[defaultPeriod]
             : null;
-        const starsGained = formatStarsGained(periodStarsGained);
+        const periodStars = formatPeriodStars(periodStarsGained);
         const [owner, repositoryName] = item.fullName.split("/");
 
         return (
@@ -52,11 +52,11 @@ const visibleItems = sortRepositoriesByPeriod(items, defaultPeriod);
               {periodRanking === null ? "#—" : `#${formatInteger(periodRanking)}`}
             </div>
             <div
-              class:list={["movement-pill", `movement-${starsGained.tone}`]}
+              class:list={["movement-pill", `movement-${periodStars.tone}`]}
               data-stars-gained
-              aria-label={`Étoiles gagnées: ${starsGained.label}`}
+              aria-label={`Total d'étoiles reçues sur la période: ${periodStars.label}`}
             >
-              {starsGained.label}
+              {periodStars.label}
             </div>
             <div class="repo-main">
               <a class="repo-link" href={item.htmlUrl}>

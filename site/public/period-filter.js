@@ -48,7 +48,7 @@
       : null;
   };
 
-  const formatStarsGained = (value) => {
+  const formatPeriodStars = (value) => {
     if (value === null) {
       return {
         label: "Non suivi",
@@ -58,7 +58,7 @@
 
     if (value > 0) {
       return {
-        label: `+${compactNumberFormatter.format(value)}`,
+        label: compactNumberFormatter.format(value),
         tone: "up"
       };
     }
@@ -180,7 +180,7 @@
       rows.forEach(({ periodRank, starsGained, row }, index) => {
         const rank = row.querySelector("[data-period-rank]");
         const pill = row.querySelector("[data-stars-gained]");
-        const formattedStars = formatStarsGained(starsGained);
+        const formattedStars = formatPeriodStars(starsGained);
 
         list.appendChild(row);
         row.hidden = maxItems !== null && index >= maxItems;
@@ -197,15 +197,15 @@
           pill.setAttribute(
             "aria-label",
             starsGained === null
-              ? "Étoiles gagnées: historique non suivi"
-              : `Étoiles gagnées: ${integerFormatter.format(starsGained)}`
+              ? `Total d'étoiles reçues sur ${context.label}: historique non suivi`
+              : `Total d'étoiles reçues sur ${context.label}: ${integerFormatter.format(starsGained)}`
           );
         }
       });
 
       list.setAttribute(
         "aria-label",
-        `Classement par étoiles gagnées sur ${context.label}`
+        `Classement par total d'étoiles reçues sur ${context.label}`
       );
     });
   };
@@ -215,7 +215,7 @@
 
     document.querySelectorAll("[data-period-status]").forEach((status) => {
       status.textContent =
-        `Classement par étoiles gagnées · ${context.label} · ${context.baselineLabel}`;
+        `Classement par total d'étoiles reçues · ${context.label} · ${context.baselineLabel}`;
     });
 
     document.querySelectorAll("[data-period-rank-heading]").forEach((heading) => {
@@ -225,7 +225,7 @@
     document
       .querySelectorAll("[data-period-column-heading]")
       .forEach((heading) => {
-        heading.textContent = `Gagnés · ${context.label}`;
+        heading.textContent = `Stars · ${context.label}`;
       });
   };
 
