@@ -72,6 +72,17 @@
         .filter(Boolean)
     );
 
+  const periodContext = (periodId) => {
+    const button = enabledButtons().find(
+      (candidate) => candidate.dataset.periodId === periodId
+    );
+
+    return {
+      label: button?.dataset.periodLabel || periodId,
+      baselineLabel: button?.dataset.baselineLabel || "Historique indisponible"
+    };
+  };
+
   const readStoredPeriod = () => {
     try {
       return window.localStorage.getItem(storageKey);
@@ -153,6 +164,20 @@
     });
   };
 
+  const updatePeriodContext = (periodId) => {
+    const context = periodContext(periodId);
+
+    document.querySelectorAll("[data-period-status]").forEach((status) => {
+      status.textContent = `${context.label} · ${context.baselineLabel}`;
+    });
+
+    document
+      .querySelectorAll("[data-period-column-heading]")
+      .forEach((heading) => {
+        heading.textContent = `Move · ${context.label}`;
+      });
+  };
+
   const applyPeriod = (periodId, options = {}) => {
     if (!periodId || !validPeriodIds().has(periodId)) {
       return;
@@ -165,6 +190,7 @@
     });
 
     updatePills(periodId);
+    updatePeriodContext(periodId);
 
     if (options.persist) {
       storePeriod(periodId);
