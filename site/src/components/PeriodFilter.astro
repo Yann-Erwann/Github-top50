@@ -1,0 +1,49 @@
+---
+import type { PeriodOption } from "../data/site-data";
+import { formatSnapshotDate } from "../utils/format";
+
+interface Props {
+  periods: PeriodOption[];
+  defaultPeriod?: string | null;
+}
+
+const { periods, defaultPeriod = null } = Astro.props;
+const availablePeriods = periods.filter((period) => period.available);
+const selectedPeriod = defaultPeriod ?? availablePeriods[0]?.id ?? "";
+---
+
+{
+  periods.length > 0 && (
+    <div
+      class="period-filter"
+      data-period-filter
+      data-default-period={selectedPeriod}
+    >
+      <span class="period-filter-label">Période</span>
+      <div class="period-options" role="radiogroup" aria-label="Période de comparaison">
+        {periods.map((period) => {
+          const isSelected = period.available && period.id === selectedPeriod;
+          const baselineLabel = period.baselineCapturedAt
+            ? `Référence ${formatSnapshotDate(period.baselineCapturedAt)}`
+            : "Historique indisponible";
+
+          return (
+            <button
+              class:list={["period-button", isSelected && "is-active"]}
+              type="button"
+              role="radio"
+              aria-checked={String(isSelected)}
+              aria-label={`${period.label}. ${baselineLabel}.`}
+              data-period-button
+              data-period-id={period.id}
+              disabled={!period.available}
+              title={baselineLabel}
+            >
+              {period.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  )
+}

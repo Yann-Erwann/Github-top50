@@ -10,6 +10,10 @@ from github_top50.domain.models import (
 )
 
 
+def _empty_movements() -> dict[str, None]:
+    return {period.id: None for period in exporter.PERIODS}
+
+
 def _make_snapshot() -> dict[str, object]:
     return {
         "captured_at": "2026-04-04T07:36:12Z",
@@ -110,6 +114,10 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
     assert payload["global"]["highlights"][0]["fullName"] == "owner/global-one"
     assert payload["global"]["items"][0]["owner"] == "owner"
     assert payload["global"]["items"][0]["name"] == "global-one"
+    assert payload["global"]["items"][0]["movements"] == _empty_movements()
+    assert payload["periods"][0]["id"] == "7d"
+    assert payload["periods"][0]["available"] is False
+    assert payload["periods"][-1]["id"] == "all"
     assert payload["categories"] == [
         {
             "tag": "PYTHON",
@@ -125,6 +133,7 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
                     "id": 2,
                     "rank": 1,
                     "previousRank": None,
+                    "movements": _empty_movements(),
                     "fullName": "owner/python-lib",
                     "owner": "owner",
                     "name": "python-lib",
@@ -149,6 +158,7 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
                     "id": 3,
                     "rank": 1,
                     "previousRank": None,
+                    "movements": _empty_movements(),
                     "fullName": "owner/react-app",
                     "owner": "owner",
                     "name": "react-app",
@@ -199,8 +209,11 @@ def test_build_site_payload_uses_previous_snapshot_for_rank_movements(export_con
     )
 
     assert payload["global"]["items"][0]["previousRank"] == 4
+    assert payload["global"]["items"][0]["movements"]["7d"] == 4
     assert payload["categories"][0]["items"][0]["previousRank"] == 2
+    assert payload["categories"][0]["items"][0]["movements"]["7d"] == 2
     assert payload["categories"][1]["items"][0]["previousRank"] is None
+    assert payload["categories"][1]["items"][0]["movements"]["7d"] is None
 
 
 def test_build_site_payload_raises_when_snapshot_tags_drift(export_config):
@@ -262,10 +275,16 @@ def test_export_site_data_uses_latest_history_before_current_snapshot(
     output_path = tmp_path / "public" / "site-data.json"
     history_dir = tmp_path / "raw" / "history"
     current_snapshot = _make_snapshot()
+    all_time_snapshot = _make_snapshot()
+    period_snapshot = _make_snapshot()
     older_snapshot = _make_snapshot()
     previous_snapshot = _make_snapshot()
     same_timestamp_snapshot = _make_snapshot()
 
+    all_time_snapshot["captured_at"] = "2026-03-01T07:36:12Z"
+    all_time_snapshot["global"]["items"][0]["rank"] = 20
+    period_snapshot["captured_at"] = "2026-03-28T07:36:12Z"
+    period_snapshot["global"]["items"][0]["rank"] = 11
     older_snapshot["captured_at"] = "2026-04-02T07:36:12Z"
     older_snapshot["global"]["items"][0]["rank"] = 9
     previous_snapshot["captured_at"] = "2026-04-03T07:36:12Z"
@@ -276,6 +295,14 @@ def test_export_site_data_uses_latest_history_before_current_snapshot(
     input_path.parent.mkdir(parents=True)
     history_dir.mkdir(parents=True)
     input_path.write_text(json.dumps(current_snapshot), encoding="utf-8")
+    (history_dir / "all-time.json").write_text(
+        json.dumps(all_time_snapshot),
+        encoding="utf-8",
+    )
+    (history_dir / "period.json").write_text(
+        json.dumps(period_snapshot),
+        encoding="utf-8",
+    )
     (history_dir / "older.json").write_text(
         json.dumps(older_snapshot),
         encoding="utf-8",
@@ -296,6 +323,10 @@ def test_export_site_data_uses_latest_history_before_current_snapshot(
     )
 
     assert payload["global"]["items"][0]["previousRank"] == 3
+    assert payload["global"]["items"][0]["movements"]["7d"] == 11
+    assert payload["global"]["items"][0]["movements"]["all"] == 20
+    assert payload["periods"][0]["baselineCapturedAt"] == "2026-03-28T07:36:12Z"
+    assert payload["periods"][-1]["baselineCapturedAt"] == "2026-03-01T07:36:12Z"
 
 
 def test_main_passes_cli_paths_to_export(monkeypatch):
