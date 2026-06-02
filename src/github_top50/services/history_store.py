@@ -8,7 +8,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from github_top50.domain.models import CategoryDefinition, Repository
+from github_top50.domain.models import CategoryDefinition, PeriodDefinition, Repository
+from github_top50.services.periods import (
+    build_created_period_query,
+    period_start_timestamp,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +22,7 @@ class Top50Snapshot:
     captured_at: str
     global_items: tuple[Repository, ...]
     category_items: dict[str, tuple[Repository, ...]]
+    period_items: dict[str, tuple[Repository, ...]]
 
 
 def _repository_key(repository: Repository) -> int | str:
@@ -64,6 +69,10 @@ class SnapshotStore:
                 tag: tuple(self._deserialize_items(section["items"]))
                 for tag, section in payload["categories"].items()
             },
+            period_items={
+                period_id: tuple(self._deserialize_items(section["items"]))
+                for period_id, section in payload.get("periods", {}).items()
+            },
         )
 
     def save(
@@ -73,6 +82,8 @@ class SnapshotStore:
         global_items: list[Repository],
         categories: tuple[CategoryDefinition, ...],
         category_items: dict[str, list[Repository]],
+        periods: tuple[PeriodDefinition, ...] = (),
+        period_items: dict[str, list[Repository]] | None = None,
     ) -> Path:
         """Persist the latest snapshot and an immutable history entry."""
         timestamp = captured_at.astimezone(timezone.utc).replace(microsecond=0)
@@ -81,6 +92,8 @@ class SnapshotStore:
             global_items=global_items,
             categories=categories,
             category_items=category_items,
+            periods=periods,
+            period_items=period_items or {},
         )
 
         self._latest_snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -101,10 +114,24 @@ class SnapshotStore:
         global_items: list[Repository],
         categories: tuple[CategoryDefinition, ...],
         category_items: dict[str, list[Repository]],
+        periods: tuple[PeriodDefinition, ...],
+        period_items: dict[str, list[Repository]],
     ) -> dict[str, Any]:
         return {
             "captured_at": captured_at.isoformat().replace("+00:00", "Z"),
             "global": {"items": self._serialize_items(global_items)},
+            "periods": {
+                period.id: {
+                    "label": period.label,
+                    "query": build_created_period_query(captured_at, period),
+                    "starts_at": period_start_timestamp(captured_at, period)
+                    .isoformat()
+                    .replace("+00:00", "Z"),
+                    "items": self._serialize_items(period_items[period.id]),
+                }
+                for period in periods
+                if not period.all_time
+            },
             "categories": {
                 category.tag: {
                     "title": category.title,

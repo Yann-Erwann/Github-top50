@@ -7,7 +7,13 @@ import { formatInteger } from "../utils/format";
 
 const data = await getSiteData();
 const defaultPeriod = data.periods.find((period) => period.available)?.id ?? null;
-const defaultPeriodRepositories = sortRepositoriesByPeriod(data.global.items, defaultPeriod);
+const defaultPeriodRepositories = sortRepositoriesByPeriod(
+  data.global.items,
+  defaultPeriod
+).filter(
+  (item) =>
+    defaultPeriod === null || item.periodRankings[defaultPeriod] !== null
+);
 const topRepositoriesStructuredData = {
   "@context": "https://schema.org",
   "@type": "ItemList",
@@ -38,8 +44,8 @@ const topRepositoriesStructuredData = {
       <p class="eyebrow">Top 50 global</p>
       <h1>Classement principal des repositories GitHub</h1>
       <p class="page-intro">
-        Sélectionne une période pour classer les repositories suivis selon le total d’étoiles
-        reçues depuis le snapshot de référence.
+        Sélectionne une période pour classer les repositories créés pendant cette fenêtre selon
+        leur total d’étoiles. La période complète affiche le top GitHub historique.
       </p>
     </div>
     <div class="page-hero-side card-surface">

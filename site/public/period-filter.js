@@ -183,7 +183,8 @@
         const formattedStars = formatPeriodStars(starsGained);
 
         list.appendChild(row);
-        row.hidden = maxItems !== null && index >= maxItems;
+        row.hidden =
+          periodRank === null || (maxItems !== null && index >= maxItems);
 
         if (rank) {
           rank.textContent =

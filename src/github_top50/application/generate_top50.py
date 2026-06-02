@@ -12,10 +12,12 @@ from typing import Protocol
 from github_top50.domain.models import (
     CategoryDefinition,
     CategoryLike,
+    PeriodDefinition,
     Repository,
     to_category_definition,
 )
 from github_top50.services.history_store import SnapshotStore, apply_rank_changes
+from github_top50.services.periods import build_created_period_query
 from github_top50.services.readme_builder import build_generated_content, update_readme
 
 SleepFunc = Callable[[float], None]
@@ -42,6 +44,7 @@ class GenerateTop50ReadmeUseCase:
     global_query: str
     per_page: int
     category_per_page: int
+    periods: Sequence[PeriodDefinition] = ()
     snapshot_store: SnapshotStore | None = None
     sleep_func: SleepFunc = time.sleep
     now_func: NowFunc = _utc_now
@@ -67,6 +70,28 @@ class GenerateTop50ReadmeUseCase:
 
         return category_items
 
+    def fetch_period_items(
+        self,
+        captured_at: datetime,
+    ) -> dict[str, list[Repository]]:
+        """Fetch top repositories created during each bounded ranking period."""
+        bounded_periods = tuple(
+            period for period in self.periods if not period.all_time
+        )
+        period_items: dict[str, list[Repository]] = {}
+
+        for index, period in enumerate(bounded_periods):
+            query = build_created_period_query(captured_at, period)
+            print(f"Fetching repositories created during {period.label}...")
+            period_items[period.id] = self.repository_gateway.search_repositories(
+                query,
+                self.per_page,
+            )
+            if index < len(bounded_periods) - 1:
+                self.sleep_func(2)
+
+        return period_items
+
     def run(
         self,
         *,
@@ -81,11 +106,17 @@ class GenerateTop50ReadmeUseCase:
             if self.snapshot_store is not None
             else None
         )
+        captured_at = self.now_func()
 
         print("Fetching global top 50...")
         global_items = self.repository_gateway.search_repositories(
             self.global_query, self.per_page
         )
+        if self.periods:
+            self.sleep_func(2)
+        period_items = self.fetch_period_items(captured_at)
+        if period_items:
+            self.sleep_func(2)
         category_items = self.fetch_category_items(categories)
 
         global_items = apply_rank_changes(
@@ -106,15 +137,27 @@ class GenerateTop50ReadmeUseCase:
             )
             for tag, items in category_items.items()
         }
+        previous_period_items = (
+            previous_snapshot.period_items if previous_snapshot is not None else {}
+        )
+        period_items = {
+            period_id: apply_rank_changes(
+                items,
+                previous_period_items.get(period_id, items),
+            )
+            for period_id, items in period_items.items()
+        }
 
         generated = build_generated_content(global_items, categories, category_items)
         update_readme(readme_path, start_marker, end_marker, generated)
         if self.snapshot_store is not None:
             history_path = self.snapshot_store.save(
-                captured_at=self.now_func(),
+                captured_at=captured_at,
                 global_items=global_items,
                 categories=categories,
                 category_items=category_items,
+                periods=tuple(self.periods),
+                period_items=period_items,
             )
             print(f"Snapshot enregistré dans {history_path}.")
         print("README.md mis à jour.")

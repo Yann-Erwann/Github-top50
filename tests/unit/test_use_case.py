@@ -1,5 +1,7 @@
+from datetime import datetime, timezone
+
 from github_top50.application.generate_top50 import GenerateTop50ReadmeUseCase
-from github_top50.domain.models import CategoryDefinition, Repository
+from github_top50.domain.models import CategoryDefinition, PeriodDefinition, Repository
 
 
 class FakeGateway:
@@ -52,6 +54,43 @@ def test_fetch_category_items_queries_each_category_and_sleeps(capsys):
     output = capsys.readouterr().out
     assert "Fetching Cat A..." in output
     assert "Fetching Cat B..." in output
+
+
+def test_fetch_period_items_queries_each_bounded_period_and_sleeps(capsys):
+    captured_at = datetime(2026, 4, 4, 7, 36, 12, tzinfo=timezone.utc)
+    gateway = FakeGateway(
+        {
+            "created:>=2026-03-28": [_make_repo(name="org/week")],
+            "created:>=2026-02-04": [_make_repo(name="org/two-months")],
+        }
+    )
+    sleeps = []
+    use_case = GenerateTop50ReadmeUseCase(
+        categories=(),
+        repository_gateway=gateway,
+        global_query="stars:>42",
+        per_page=50,
+        category_per_page=10,
+        periods=(
+            PeriodDefinition(id="7d", label="7 jours", days=7),
+            PeriodDefinition(id="2m", label="2 mois", months=2),
+            PeriodDefinition(id="all", label="Toute la période", all_time=True),
+        ),
+        sleep_func=sleeps.append,
+    )
+
+    result = use_case.fetch_period_items(captured_at)
+
+    assert gateway.calls == [
+        ("created:>=2026-03-28", 50),
+        ("created:>=2026-02-04", 50),
+    ]
+    assert sleeps == [2]
+    assert result["7d"][0].full_name == "org/week"
+    assert result["2m"][0].full_name == "org/two-months"
+    output = capsys.readouterr().out
+    assert "Fetching repositories created during 7 jours..." in output
+    assert "Fetching repositories created during 2 mois..." in output
 
 
 def test_run_builds_content_and_updates_readme(monkeypatch, tmp_path, capsys):
@@ -124,12 +163,23 @@ def test_run_applies_rank_changes_and_saves_snapshot(monkeypatch, tmp_path):
         def load_latest(self):
             return None
 
-        def save(self, *, captured_at, global_items, categories, category_items):
+        def save(
+            self,
+            *,
+            captured_at,
+            global_items,
+            categories,
+            category_items,
+            periods,
+            period_items,
+        ):
             captured["save"] = {
                 "captured_at": captured_at,
                 "global_items": global_items,
                 "categories": categories,
                 "category_items": category_items,
+                "periods": periods,
+                "period_items": period_items,
             }
             return tmp_path / "data/top50/history/2026-03-18T06-00-00Z.json"
 
@@ -162,3 +212,5 @@ def test_run_applies_rank_changes_and_saves_snapshot(monkeypatch, tmp_path):
     assert captured["save"]["global_items"][0].rank == 1
     assert captured["save"]["global_items"][0].previous_rank == 1
     assert captured["save"]["category_items"]["PY"][0].rank == 1
+    assert captured["save"]["periods"] == ()
+    assert captured["save"]["period_items"] == {}

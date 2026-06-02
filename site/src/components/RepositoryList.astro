@@ -46,7 +46,7 @@ const visibleItems = sortRepositoriesByPeriod(items, defaultPeriod);
             data-current-rank={item.rank}
             data-period-rankings={JSON.stringify(item.periodRankings)}
             data-period-stars-gained={JSON.stringify(item.periodStarsGained)}
-            hidden={limit !== null && index >= limit}
+            hidden={periodRanking === null || (limit !== null && index >= limit)}
           >
             <div class="repo-rank" data-period-rank>
               {periodRanking === null ? "#—" : `#${formatInteger(periodRanking)}`}

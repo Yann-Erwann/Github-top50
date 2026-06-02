@@ -5,10 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from calendar import monthrange
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -25,7 +23,10 @@ from github_top50.config import (  # noqa: E402
     HOSTING_RECOMMENDATIONS,
     LATEST_SNAPSHOT_PATH,
     PER_PAGE,
+    PERIODS,
 )
+from github_top50.domain.models import PeriodDefinition  # noqa: E402
+from github_top50.services.periods import period_start_timestamp  # noqa: E402
 
 DEFAULT_OUTPUT_PATH = Path("site/public/data/site-data.json")
 ALLOWED_REPOSITORY_HOSTS = frozenset({"github.com"})
@@ -41,28 +42,6 @@ CATEGORY_ACCENTS = (
 )
 
 RepositoryKey = int | str
-
-
-@dataclass(frozen=True, slots=True)
-class PeriodDefinition:
-    """A comparison period exposed by the static site."""
-
-    id: str
-    label: str
-    days: int | None = None
-    months: int | None = None
-    all_time: bool = False
-
-
-PERIODS: tuple[PeriodDefinition, ...] = (
-    PeriodDefinition(id="7d", label="7 jours", days=7),
-    PeriodDefinition(id="15d", label="15 jours", days=15),
-    PeriodDefinition(id="30d", label="30 jours", days=30),
-    PeriodDefinition(id="2m", label="2 mois", months=2),
-    PeriodDefinition(id="6m", label="6 mois", months=6),
-    PeriodDefinition(id="12m", label="12 mois", months=12),
-    PeriodDefinition(id="all", label="Toute la période", all_time=True),
-)
 
 
 def is_allowed_host(host: str, allowed_hosts: frozenset[str]) -> bool:
@@ -234,6 +213,70 @@ def period_value_for(
     }
 
 
+def merge_repository_items(
+    *item_lists: Sequence[Mapping[str, Any]],
+) -> list[Mapping[str, Any]]:
+    """Merge repository lists while preserving the first occurrence of each item."""
+    merged_items: list[Mapping[str, Any]] = []
+    seen_keys: set[RepositoryKey] = set()
+
+    for items in item_lists:
+        for item in items:
+            key = repository_key(item)
+            if key in seen_keys:
+                continue
+
+            seen_keys.add(key)
+            merged_items.append(item)
+
+    return merged_items
+
+
+def snapshot_period_items(
+    snapshot: Mapping[str, Any],
+    period_id: str,
+) -> list[Mapping[str, Any]] | None:
+    """Return an API-backed period repository list from an enriched snapshot."""
+    periods = snapshot.get("periods")
+    if not isinstance(periods, Mapping):
+        return None
+
+    section = periods.get(period_id)
+    if not isinstance(section, Mapping):
+        return None
+
+    items = section.get("items")
+    return items if isinstance(items, list) else None
+
+
+def build_api_period_performance(
+    items: Sequence[Mapping[str, Any]],
+) -> dict[RepositoryKey, dict[str, int | None]]:
+    """Build rankings from API results for repositories created during a period."""
+    return {
+        repository_key(item): {
+            "rank": rank_from_item(item, fallback_rank),
+            "starsGained": to_int_or_none(item.get("stargazers_count")),
+        }
+        for fallback_rank, item in enumerate(items, start=1)
+    }
+
+
+def build_global_catalog(snapshot: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """Return every repository needed to render global period rankings."""
+    item_lists: list[Sequence[Mapping[str, Any]]] = [snapshot["global"]["items"]]
+
+    for period in PERIODS:
+        if period.all_time:
+            continue
+
+        items = snapshot_period_items(snapshot, period.id)
+        if items is not None:
+            item_lists.append(items)
+
+    return merge_repository_items(*item_lists)
+
+
 def to_camel_repository(
     item: Mapping[str, Any],
     fallback_rank: int,
@@ -341,31 +384,12 @@ def load_snapshot(input_path: Path) -> dict[str, Any]:
         return json.load(input_file)
 
 
-def subtract_months(value: datetime, months: int) -> datetime:
-    """Return a timestamp shifted back by a whole number of calendar months."""
-    month_index = value.month - months - 1
-    year = value.year + month_index // 12
-    month = month_index % 12 + 1
-    day = min(value.day, monthrange(year, month)[1])
-
-    return value.replace(year=year, month=month, day=day)
-
-
 def period_target_timestamp(
     current_timestamp: datetime,
     period: PeriodDefinition,
 ) -> datetime | None:
     """Return the desired historical timestamp for a comparison period."""
-    if period.all_time:
-        return None
-
-    if period.days is not None:
-        return current_timestamp - timedelta(days=period.days)
-
-    if period.months is not None:
-        return subtract_months(current_timestamp, period.months)
-
-    return None
+    return period_start_timestamp(current_timestamp, period)
 
 
 def load_history_snapshots(
@@ -543,10 +567,11 @@ def global_period_rank_indexes(
 
 def global_period_performance(
     items: Sequence[Mapping[str, Any]],
+    current_snapshot: Mapping[str, Any],
     period_snapshots: Mapping[str, Mapping[str, Any] | None],
 ) -> dict[str, dict[RepositoryKey, dict[str, int | None]]]:
     """Rank tracked global repositories by stars gained for every period."""
-    return {
+    performance = {
         period_id: build_period_performance(
             items,
             snapshot["global"]["items"] if snapshot is not None else None,
@@ -554,15 +579,38 @@ def global_period_performance(
         for period_id, snapshot in period_snapshots.items()
     }
 
+    for period in PERIODS:
+        explicit_items = (
+            current_snapshot["global"]["items"]
+            if period.all_time
+            else snapshot_period_items(current_snapshot, period.id)
+        )
+        if explicit_items is not None:
+            performance[period.id] = build_api_period_performance(explicit_items)
+
+    return performance
+
 
 def build_period_metadata(
     period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    current_snapshot: Mapping[str, Any],
 ) -> list[dict[str, Any]]:
     """Build the frontend metadata for the period selector."""
     metadata: list[dict[str, Any]] = []
 
     for period in PERIODS:
         snapshot = period_snapshots.get(period.id)
+        explicit_section = (
+            None
+            if period.all_time
+            else current_snapshot.get("periods", {}).get(period.id)
+        )
+        starts_at = (
+            str(explicit_section.get("starts_at"))
+            if isinstance(explicit_section, Mapping)
+            and explicit_section.get("starts_at") is not None
+            else None
+        )
         baseline_captured_at = (
             str(snapshot["captured_at"]) if snapshot is not None else None
         )
@@ -572,8 +620,18 @@ def build_period_metadata(
                 "label": period.label,
                 "days": period.days,
                 "months": period.months,
-                "available": snapshot is not None,
+                "available": period.all_time
+                or starts_at is not None
+                or snapshot is not None,
                 "baselineCapturedAt": baseline_captured_at,
+                "startsAt": starts_at,
+                "rankingMode": (
+                    "all"
+                    if period.all_time
+                    else "created"
+                    if starts_at is not None
+                    else "tracked-delta"
+                ),
             }
         )
 
@@ -605,8 +663,10 @@ def build_site_payload(
         else {period.id: previous_snapshot for period in PERIODS}
     )
     global_period_ranks = global_period_rank_indexes(selected_period_snapshots)
+    global_catalog = build_global_catalog(snapshot)
     global_performance = global_period_performance(
-        snapshot["global"]["items"],
+        global_catalog,
+        snapshot,
         selected_period_snapshots,
     )
 
@@ -618,7 +678,7 @@ def build_site_payload(
             global_period_ranks,
             global_performance,
         )
-        for index, item in enumerate(snapshot["global"]["items"], start=1)
+        for index, item in enumerate(global_catalog, start=1)
     ]
     categories = []
 
@@ -670,8 +730,9 @@ def build_site_payload(
         }
         for recommendation in HOSTING_RECOMMENDATIONS
     ]
-    languages = build_language_stats(global_items)
-    total_stars = sum(int(item["stargazersCount"]) for item in global_items)
+    current_global_items = global_items[: len(snapshot["global"]["items"])]
+    languages = build_language_stats(current_global_items)
+    total_stars = sum(int(item["stargazersCount"]) for item in current_global_items)
     captured_at = str(snapshot["captured_at"])
 
     return {
@@ -680,7 +741,7 @@ def build_site_payload(
             "label": f"Snapshot du {captured_at[:10]}",
             "source": input_path.as_posix(),
         },
-        "periods": build_period_metadata(selected_period_snapshots),
+        "periods": build_period_metadata(selected_period_snapshots, snapshot),
         "global": {
             "title": "Top 50 GitHub Stars",
             "subtitle": (
@@ -695,7 +756,7 @@ def build_site_payload(
         "stats": {
             "generatedAt": generated_at or utc_now(),
             "totalStars": total_stars,
-            "repositoryCount": len(global_items),
+            "repositoryCount": len(current_global_items),
             "categoryCount": len(categories),
             "hostingCount": len(hosting),
             "topLanguage": (

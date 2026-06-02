@@ -28,6 +28,8 @@ export interface PeriodOption {
   months: number | null;
   available: boolean;
   baselineCapturedAt: string | null;
+  startsAt: string | null;
+  rankingMode: "all" | "created" | "tracked-delta";
 }
 
 export interface GlobalData {
@@ -276,7 +278,14 @@ function normalizePeriod(value: unknown, index: number): PeriodOption {
       typeof record.available === "boolean"
         ? record.available
         : baselineCapturedAt !== null,
-    baselineCapturedAt
+    baselineCapturedAt,
+    startsAt: toNullableString(record.startsAt ?? record.starts_at),
+    rankingMode:
+      record.rankingMode === "all" ||
+      record.rankingMode === "created" ||
+      record.rankingMode === "tracked-delta"
+        ? record.rankingMode
+        : "tracked-delta"
   };
 }
 

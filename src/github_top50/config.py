@@ -5,6 +5,7 @@ from pathlib import Path
 from github_top50.domain.models import (
     CategoryDefinition,
     HostingRecommendationDefinition,
+    PeriodDefinition,
 )
 
 README_PATH = Path("README.md")
@@ -17,6 +18,16 @@ LATEST_SNAPSHOT_PATH = DATA_DIR / "latest.json"
 GLOBAL_QUERY = "stars:>1"
 PER_PAGE = 50
 CATEGORY_PER_PAGE = 10
+
+PERIODS: tuple[PeriodDefinition, ...] = (
+    PeriodDefinition(id="7d", label="7 jours", days=7),
+    PeriodDefinition(id="15d", label="15 jours", days=15),
+    PeriodDefinition(id="30d", label="30 jours", days=30),
+    PeriodDefinition(id="2m", label="2 mois", months=2),
+    PeriodDefinition(id="6m", label="6 mois", months=6),
+    PeriodDefinition(id="12m", label="12 mois", months=12),
+    PeriodDefinition(id="all", label="Toute la période", all_time=True),
+)
 
 CATEGORIES: tuple[CategoryDefinition, ...] = (
     CategoryDefinition(
