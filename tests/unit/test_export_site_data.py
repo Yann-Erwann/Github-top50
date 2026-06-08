@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -10,8 +11,37 @@ from github_top50.domain.models import (
 )
 
 
+class FakeGitHubResponse:
+    def __init__(
+        self,
+        payload,
+        *,
+        links=None,
+        status_code=200,
+        headers=None,
+    ):
+        self._payload = payload
+        self.links = links or {}
+        self.status_code = status_code
+        self.headers = headers or {}
+
+    def json(self):
+        return self._payload
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+
 def _empty_movements() -> dict[str, None]:
     return {period.id: None for period in exporter.PERIODS}
+
+
+def _starred_page(start_at: datetime, count: int) -> list[dict[str, str]]:
+    return [
+        {"starred_at": (start_at + timedelta(minutes=index)).isoformat()}
+        for index in range(count)
+    ]
 
 
 def _global_period_rankings() -> dict[str, int | None]:
@@ -213,6 +243,114 @@ def test_build_site_payload_combines_snapshot_and_static_config(export_config):
     }
 
 
+def test_github_star_history_client_counts_stargazers_at_timestamp():
+    page_one = _starred_page(datetime(2026, 1, 1, tzinfo=UTC), 100)
+    page_two = _starred_page(datetime(2026, 1, 1, 1, 40, tzinfo=UTC), 50)
+    calls = []
+
+    def fake_get(url, *, headers, params, timeout):
+        calls.append((url, headers, params, timeout))
+        page = params["page"]
+        payload = page_one if page == 1 else page_two
+        links = (
+            {
+                "last": {
+                    "url": (
+                        "https://api.github.com/repos/owner/repo/stargazers"
+                        "?per_page=100&page=2"
+                    )
+                }
+            }
+            if page == 1
+            else {}
+        )
+        return FakeGitHubResponse(payload, links=links)
+
+    client = exporter.GitHubStarHistoryClient(
+        token="token",
+        request_get=fake_get,
+    )
+
+    count = client.count_stargazers_at(
+        "owner/repo",
+        datetime(2026, 1, 1, 2, 4, tzinfo=UTC),
+    )
+    cached_count = client.count_stargazers_at(
+        "owner/repo",
+        datetime(2026, 1, 1, 2, 4, tzinfo=UTC),
+    )
+
+    assert count == 125
+    assert cached_count == 125
+    assert len(calls) == 2
+    assert calls[0][0] == "https://api.github.com/repos/owner/repo/stargazers"
+    assert calls[0][1]["Accept"] == "application/vnd.github.star+json"
+    assert calls[0][1]["Authorization"] == "Bearer token"
+    assert calls[0][2] == {"per_page": 100, "page": 1}
+    assert calls[0][3] == 30
+
+
+def test_github_star_history_client_handles_empty_and_capped_pages():
+    full_page = _starred_page(datetime(2026, 1, 1, tzinfo=UTC), 100)
+    empty_calls = []
+
+    empty_client = exporter.GitHubStarHistoryClient(
+        request_get=lambda *args, **kwargs: (
+            empty_calls.append((args, kwargs)) or FakeGitHubResponse([])
+        ),
+    )
+    capped_client = exporter.GitHubStarHistoryClient(
+        request_get=lambda *args, **kwargs: FakeGitHubResponse(full_page),
+    )
+
+    assert (
+        empty_client.count_stargazers_at(
+            "owner/empty",
+            datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        == 0
+    )
+    assert (
+        capped_client.count_stargazers_at(
+            "owner/capped",
+            datetime(2026, 1, 2, tzinfo=UTC),
+        )
+        is None
+    )
+    assert empty_calls
+
+
+def test_github_star_history_client_retries_rate_limit_and_rejects_bad_payload():
+    responses = [
+        FakeGitHubResponse(
+            [],
+            status_code=403,
+            headers={
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": "1",
+            },
+        ),
+        FakeGitHubResponse({"unexpected": "payload"}),
+    ]
+    sleep_calls = []
+
+    def fake_get(*args, **kwargs):
+        return responses.pop(0)
+
+    client = exporter.GitHubStarHistoryClient(
+        request_get=fake_get,
+        sleep_func=sleep_calls.append,
+    )
+
+    with pytest.raises(ValueError, match="Unexpected GitHub stargazers payload"):
+        client.count_stargazers_at(
+            "owner/repo",
+            datetime(2026, 1, 1, tzinfo=UTC),
+        )
+
+    assert sleep_calls == [1]
+
+
 def test_build_site_payload_uses_previous_snapshot_for_rank_movements(export_config):
     previous_snapshot = _make_snapshot()
     previous_snapshot["captured_at"] = "2026-04-03T07:36:12Z"
@@ -240,6 +378,27 @@ def test_build_site_payload_uses_previous_snapshot_for_rank_movements(export_con
     assert payload["categories"][1]["items"][0]["movements"]["7d"] is None
     assert payload["categories"][1]["items"][0]["periodRankings"]["7d"] is None
     assert payload["categories"][1]["items"][0]["periodStarsGained"]["7d"] is None
+
+
+def test_build_site_payload_uses_star_history_for_missing_category_baseline(
+    export_config,
+):
+    previous_snapshot = _make_snapshot()
+    previous_snapshot["captured_at"] = "2026-03-28T07:36:12Z"
+    previous_snapshot["categories"]["PYTHON"]["items"][0]["id"] = 99
+    previous_snapshot["categories"]["PYTHON"]["items"][0]["full_name"] = (
+        "owner/old-python-lib"
+    )
+
+    payload = exporter.build_site_payload(
+        _make_snapshot(),
+        period_snapshots={"7d": previous_snapshot},
+        star_history_baselines={"7d": {"owner/python-lib": 30}},
+    )
+
+    python_item = payload["categories"][0]["items"][0]
+    assert python_item["periodRankings"]["7d"] == 1
+    assert python_item["periodStarsGained"]["7d"] == 12
 
 
 def test_build_site_payload_ranks_repositories_by_period_star_gains(export_config):
@@ -440,13 +599,61 @@ def test_export_site_data_uses_latest_history_before_current_snapshot(
     assert payload["periods"][-1]["baselineCapturedAt"] == "2026-03-01T07:36:12Z"
 
 
+def test_refresh_star_history_cache_fetches_missing_category_baselines(export_config):
+    current_snapshot = _make_snapshot()
+    previous_snapshot = _make_snapshot()
+    previous_snapshot["captured_at"] = "2026-03-28T07:36:12Z"
+    previous_snapshot["categories"]["PYTHON"]["items"][0]["id"] = 99
+    previous_snapshot["categories"]["PYTHON"]["items"][0]["full_name"] = (
+        "owner/old-python-lib"
+    )
+    cache = exporter.default_star_history_cache()
+
+    class FakeStarHistoryClient:
+        def __init__(self):
+            self.calls = []
+
+        def count_stargazers_at(self, full_name, timestamp):
+            self.calls.append((full_name, exporter.timestamp_cache_key(timestamp)))
+            return 30
+
+    client = FakeStarHistoryClient()
+
+    changed = exporter.refresh_star_history_cache(
+        cache,
+        current_snapshot,
+        {"7d": previous_snapshot},
+        repositories=["owner/python-lib"],
+        client=client,
+    )
+
+    assert changed is True
+    assert client.calls == [("owner/python-lib", "2026-03-28T07:36:12Z")]
+    assert cache["repositories"]["owner/python-lib"] == {"2026-03-28T07:36:12Z": 30}
+
+
 def test_main_passes_cli_paths_to_export(monkeypatch):
     captured = {}
 
     def fake_export_site_data(
-        input_path: Path, output_path: Path, *, generated_at=None, history_dir=None
+        input_path: Path,
+        output_path: Path,
+        *,
+        generated_at=None,
+        history_dir=None,
+        star_history_cache_path=None,
+        refresh_github_star_history=False,
+        star_history_repositories=(),
     ):
-        captured["args"] = (input_path, output_path, generated_at, history_dir)
+        captured["args"] = (
+            input_path,
+            output_path,
+            generated_at,
+            history_dir,
+            star_history_cache_path,
+            refresh_github_star_history,
+            star_history_repositories,
+        )
         return {}
 
     monkeypatch.setattr(exporter, "export_site_data", fake_export_site_data)
@@ -465,4 +672,7 @@ def test_main_passes_cli_paths_to_export(monkeypatch):
         Path("custom/output.json"),
         None,
         exporter.HISTORY_DIR,
+        exporter.DEFAULT_STAR_HISTORY_CACHE_PATH,
+        False,
+        [],
     )
