@@ -19,10 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "bandit[toml]>=1.9.4,<2",
+  "msgpack>=1.2.1,<2",
   "pip-audit>=2.8,<3",
   "pytest==9.0.3",
   "pytest-cov>=7.1.0,<8",
-  "ruff>=0.15.15,<0.16"
+  "ruff>=0.15.16,<0.16"
 ]
 
 [project.scripts]

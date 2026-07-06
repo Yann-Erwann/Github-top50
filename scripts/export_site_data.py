@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import time
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
+
+import requests
 
 SRC_PATH = Path(__file__).resolve().parents[1] / "src"
 if str(SRC_PATH) not in sys.path:
@@ -18,6 +22,7 @@ if str(SRC_PATH) not in sys.path:
 from github_top50.config import (  # noqa: E402
     CATEGORIES,
     CATEGORY_PER_PAGE,
+    DATA_DIR,
     GLOBAL_QUERY,
     HISTORY_DIR,
     HOSTING_RECOMMENDATIONS,
@@ -26,11 +31,18 @@ from github_top50.config import (  # noqa: E402
     PERIODS,
 )
 from github_top50.domain.models import PeriodDefinition  # noqa: E402
+from github_top50.services.github_client import (  # noqa: E402
+    build_headers,
+    get_rate_limit_wait_seconds,
+)
 from github_top50.services.periods import period_start_timestamp  # noqa: E402
 
 DEFAULT_OUTPUT_PATH = Path("site/public/data/site-data.json")
+DEFAULT_STAR_HISTORY_CACHE_PATH = DATA_DIR / "star-history.json"
 ALLOWED_REPOSITORY_HOSTS = frozenset({"github.com"})
 ALLOWED_HOSTING_HOSTS = frozenset({"render.com", "vercel.com"})
+GITHUB_API_BASE_URL = "https://api.github.com"
+STARGAZERS_PER_PAGE = 100
 
 CATEGORY_ACCENTS = (
     "aurora",
@@ -42,6 +54,168 @@ CATEGORY_ACCENTS = (
 )
 
 RepositoryKey = int | str
+StarHistoryBaselines = Mapping[str, Mapping[RepositoryKey, int]]
+StarHistoryCache = dict[str, Any]
+
+
+class GitHubStarHistoryClient:
+    """Read dated stargazer counts from GitHub's chronological stargazers API."""
+
+    def __init__(
+        self,
+        *,
+        token: str | None = None,
+        request_get: Any | None = None,
+        sleep_func: Any | None = None,
+    ) -> None:
+        self._request_get = request_get or requests.get
+        self._sleep_func = sleep_func or time.sleep
+        self._headers = {
+            **build_headers(token),
+            "Accept": "application/vnd.github.star+json",
+        }
+        self._page_cache: dict[tuple[str, int], list[dict[str, Any]]] = {}
+        self._last_page_cache: dict[str, int] = {}
+
+    def count_stargazers_at(
+        self,
+        full_name: str,
+        target_timestamp: datetime,
+    ) -> int | None:
+        """Return the stargazer count at a timestamp, or None when capped."""
+        target = target_timestamp.astimezone(UTC)
+        first_page = self._fetch_stargazer_page(full_name, 1)
+        first_dates = self._page_dates(first_page)
+
+        if not first_dates:
+            return 0
+        if target < first_dates[0]:
+            return 0
+
+        last_page_number = self._last_page_cache.get(full_name, 1)
+        if len(first_page) >= STARGAZERS_PER_PAGE:
+            last_page_number = self._resolve_last_page(full_name)
+
+        selected_page_number = 1
+        low = 1
+        high = last_page_number
+
+        while low <= high:
+            page_number = (low + high) // 2
+            page = self._fetch_stargazer_page(full_name, page_number)
+            dates = self._page_dates(page)
+
+            if not dates:
+                high = page_number - 1
+                continue
+            if dates[0] > target:
+                high = page_number - 1
+                continue
+
+            selected_page_number = page_number
+            if dates[-1] <= target:
+                low = page_number + 1
+                continue
+
+            break
+
+        selected_page = self._fetch_stargazer_page(full_name, selected_page_number)
+        selected_dates = self._page_dates(selected_page)
+
+        if not selected_dates:
+            return 0
+        if selected_dates[-1] <= target:
+            if (
+                selected_page_number == last_page_number
+                and len(selected_page) >= STARGAZERS_PER_PAGE
+                and target > selected_dates[-1]
+            ):
+                return None
+
+            return (selected_page_number - 1) * STARGAZERS_PER_PAGE + len(selected_page)
+
+        page_count = sum(1 for starred_at in selected_dates if starred_at <= target)
+        return (selected_page_number - 1) * STARGAZERS_PER_PAGE + page_count
+
+    def _fetch_stargazer_page(
+        self,
+        full_name: str,
+        page_number: int,
+    ) -> list[dict[str, Any]]:
+        cache_key = (full_name, page_number)
+        cached_page = self._page_cache.get(cache_key)
+        if cached_page is not None:
+            return cached_page
+
+        url = f"{GITHUB_API_BASE_URL}/repos/{full_name}/stargazers"
+        params = {
+            "per_page": STARGAZERS_PER_PAGE,
+            "page": page_number,
+        }
+        response = self._request_get(
+            url,
+            headers=self._headers,
+            params=params,
+            timeout=30,
+        )
+        wait_seconds = get_rate_limit_wait_seconds(response)
+        if wait_seconds is not None:
+            print(f"Rate limited, waiting {wait_seconds}s...")
+            self._sleep_func(wait_seconds)
+            response = self._request_get(
+                url,
+                headers=self._headers,
+                params=params,
+                timeout=30,
+            )
+
+        response.raise_for_status()
+        page = response.json()
+        if not isinstance(page, list):
+            raise ValueError(f"Unexpected GitHub stargazers payload for {full_name}")
+
+        self._page_cache[cache_key] = page
+        self._last_page_cache.setdefault(
+            full_name,
+            self._last_page_from_response(response, page_number, len(page)),
+        )
+        return page
+
+    def _resolve_last_page(self, full_name: str) -> int:
+        if full_name in self._last_page_cache:
+            return self._last_page_cache[full_name]
+
+        self._fetch_stargazer_page(full_name, 1)
+        return self._last_page_cache.get(full_name, 1)
+
+    @staticmethod
+    def _last_page_from_response(
+        response: requests.Response,
+        current_page: int,
+        item_count: int,
+    ) -> int:
+        last_link = response.links.get("last", {}).get("url")
+        if last_link:
+            parsed_last = urlparse(last_link)
+            page_values = parse_qs(parsed_last.query).get("page")
+            if page_values:
+                try:
+                    return max(1, int(page_values[-1]))
+                except ValueError:
+                    pass
+
+        return current_page if item_count < STARGAZERS_PER_PAGE else current_page
+
+    @staticmethod
+    def _page_dates(page: Sequence[Mapping[str, Any]]) -> list[datetime]:
+        dates: list[datetime] = []
+
+        for item in page:
+            starred_at = parse_snapshot_timestamp(item.get("starred_at"))
+            if starred_at is not None:
+                dates.append(starred_at)
+
+        return dates
 
 
 def is_allowed_host(host: str, allowed_hosts: frozenset[str]) -> bool:
@@ -124,14 +298,15 @@ def build_rank_index(items: Sequence[Mapping[str, Any]]) -> dict[RepositoryKey, 
 def build_period_performance(
     items: Sequence[Mapping[str, Any]],
     baseline_items: Sequence[Mapping[str, Any]] | None,
+    fallback_baseline_stars: Mapping[RepositoryKey, int] | None = None,
 ) -> dict[RepositoryKey, dict[str, int | None]]:
     """Rank tracked repositories by stars gained since a historical snapshot."""
-    if baseline_items is None:
-        return {
-            repository_key(item): {"rank": None, "starsGained": None} for item in items
-        }
-
-    baseline_by_key = {repository_key(item): item for item in baseline_items}
+    baseline_by_key = (
+        {repository_key(item): item for item in baseline_items}
+        if baseline_items is not None
+        else {}
+    )
+    fallback_baseline_stars = fallback_baseline_stars or {}
     performance: dict[RepositoryKey, dict[str, int | None]] = {}
     ranked_items: list[tuple[RepositoryKey, int, int, int]] = []
 
@@ -143,6 +318,13 @@ def build_period_performance(
             if baseline_item is not None
             else None
         )
+        if baseline_stars is None:
+            baseline_stars = to_int_or_none(fallback_baseline_stars.get(key))
+        if baseline_stars is None:
+            baseline_stars = to_int_or_none(
+                fallback_baseline_stars.get(str(item["full_name"]))
+            )
+
         current_stars = to_int_or_none(item.get("stargazers_count"))
         stars_gained = (
             current_stars - baseline_stars
@@ -354,6 +536,26 @@ def build_parser() -> argparse.ArgumentParser:
         default=HISTORY_DIR,
         help="Directory containing historical snapshot JSON files.",
     )
+    parser.add_argument(
+        "--star-history-cache-path",
+        type=Path,
+        default=DEFAULT_STAR_HISTORY_CACHE_PATH,
+        help="Path to cached GitHub stargazer baselines.",
+    )
+    parser.add_argument(
+        "--refresh-github-star-history",
+        action="store_true",
+        help="Reconstitute missing stargazer baselines through the GitHub API.",
+    )
+    parser.add_argument(
+        "--star-history-repository",
+        action="append",
+        default=[],
+        help=(
+            "Restrict GitHub star-history refresh to one owner/repo. "
+            "May be provided more than once."
+        ),
+    )
     return parser
 
 
@@ -376,6 +578,129 @@ def parse_snapshot_timestamp(value: object) -> datetime | None:
         return parsed.replace(tzinfo=UTC)
 
     return parsed.astimezone(UTC)
+
+
+def timestamp_cache_key(timestamp: datetime) -> str:
+    """Return the canonical UTC timestamp key used by the star-history cache."""
+    return (
+        timestamp.astimezone(UTC)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+
+def default_star_history_cache() -> StarHistoryCache:
+    """Return an empty star-history cache payload."""
+    return {
+        "version": 1,
+        "generated_at": None,
+        "repositories": {},
+    }
+
+
+def load_star_history_cache(cache_path: Path) -> StarHistoryCache:
+    """Load cached GitHub stargazer baselines from disk."""
+    if not cache_path.exists():
+        return default_star_history_cache()
+
+    with cache_path.open(encoding="utf-8") as cache_file:
+        cache = json.load(cache_file)
+
+    if not isinstance(cache, dict):
+        return default_star_history_cache()
+    if not isinstance(cache.get("repositories"), dict):
+        cache["repositories"] = {}
+
+    cache.setdefault("version", 1)
+    cache.setdefault("generated_at", None)
+    return cache
+
+
+def write_star_history_cache(cache_path: Path, cache: StarHistoryCache) -> None:
+    """Persist cached GitHub stargazer baselines to disk."""
+    cache["version"] = 1
+    cache["generated_at"] = utc_now()
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(
+        json.dumps(cache, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def cached_stargazer_count(
+    cache: Mapping[str, Any],
+    full_name: str,
+    timestamp: datetime,
+) -> int | None:
+    """Return one cached stargazer count, if present and valid."""
+    repositories = cache.get("repositories")
+    if not isinstance(repositories, Mapping):
+        return None
+
+    repository_cache = repositories.get(full_name)
+    if not isinstance(repository_cache, Mapping):
+        return None
+
+    value = repository_cache.get(timestamp_cache_key(timestamp))
+    return to_int_or_none(value)
+
+
+def cache_stargazer_count(
+    cache: StarHistoryCache,
+    full_name: str,
+    timestamp: datetime,
+    stargazer_count: int,
+) -> None:
+    """Store one reconstituted stargazer baseline in the cache."""
+    repositories = cache.setdefault("repositories", {})
+    if not isinstance(repositories, dict):
+        repositories = {}
+        cache["repositories"] = repositories
+
+    repository_cache = repositories.setdefault(full_name, {})
+    if not isinstance(repository_cache, dict):
+        repository_cache = {}
+        repositories[full_name] = repository_cache
+
+    repository_cache[timestamp_cache_key(timestamp)] = stargazer_count
+
+
+def star_history_baselines_from_cache(
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    cache: Mapping[str, Any],
+) -> dict[str, dict[RepositoryKey, int]]:
+    """Build period fallback baselines from the star-history cache."""
+    repositories = cache.get("repositories")
+    if not isinstance(repositories, Mapping):
+        return {}
+
+    baselines: dict[str, dict[RepositoryKey, int]] = {}
+
+    for period_id, snapshot in period_snapshots.items():
+        if snapshot is None:
+            continue
+
+        snapshot_timestamp = parse_snapshot_timestamp(snapshot.get("captured_at"))
+        if snapshot_timestamp is None:
+            continue
+
+        cache_key = timestamp_cache_key(snapshot_timestamp)
+
+        for full_name, repository_cache in repositories.items():
+            if not isinstance(full_name, str) or not isinstance(
+                repository_cache,
+                Mapping,
+            ):
+                continue
+
+            stargazer_count = to_int_or_none(repository_cache.get(cache_key))
+            if stargazer_count is None:
+                continue
+
+            baselines.setdefault(period_id, {})[full_name] = stargazer_count
+
+    return baselines
 
 
 def load_snapshot(input_path: Path) -> dict[str, Any]:
@@ -472,6 +797,150 @@ def build_period_snapshots(
     }
 
 
+def category_items_for_snapshot(
+    snapshot: Mapping[str, Any],
+    tag: str,
+) -> list[Mapping[str, Any]] | None:
+    """Return a category item list from a snapshot, if available."""
+    categories = snapshot.get("categories")
+    if not isinstance(categories, Mapping):
+        return None
+
+    category = categories.get(tag)
+    if not isinstance(category, Mapping):
+        return None
+
+    items = category.get("items")
+    return items if isinstance(items, list) else None
+
+
+def repository_present_in_items(
+    item: Mapping[str, Any],
+    items: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Return whether a repository is represented in a historical item list."""
+    key = repository_key(item)
+    full_name = str(item["full_name"])
+
+    for candidate in items:
+        if repository_key(candidate) == key:
+            return True
+        if str(candidate.get("full_name")) == full_name:
+            return True
+
+    return False
+
+
+def collect_missing_star_history_requests(
+    current_snapshot: Mapping[str, Any],
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    star_history_cache: Mapping[str, Any],
+    *,
+    repositories: Sequence[str] = (),
+) -> list[tuple[str, datetime]]:
+    """Return repo/timestamp pairs missing from local history and cache."""
+    allowed_repositories = {
+        repository.lower() for repository in repositories if repository
+    }
+    requests_by_key: dict[tuple[str, str], tuple[str, datetime]] = {}
+
+    for category in CATEGORIES:
+        current_items = category_items_for_snapshot(current_snapshot, category.tag)
+        if current_items is None:
+            continue
+
+        for item in current_items:
+            full_name = str(item["full_name"])
+            if allowed_repositories and full_name.lower() not in allowed_repositories:
+                continue
+
+            for snapshot in period_snapshots.values():
+                if snapshot is None:
+                    continue
+
+                baseline_items = category_items_for_snapshot(snapshot, category.tag)
+                if baseline_items is not None and repository_present_in_items(
+                    item,
+                    baseline_items,
+                ):
+                    continue
+
+                snapshot_timestamp = parse_snapshot_timestamp(
+                    snapshot.get("captured_at")
+                )
+                if snapshot_timestamp is None:
+                    continue
+                if (
+                    cached_stargazer_count(
+                        star_history_cache,
+                        full_name,
+                        snapshot_timestamp,
+                    )
+                    is not None
+                ):
+                    continue
+
+                timestamp_key = timestamp_cache_key(snapshot_timestamp)
+                requests_by_key[(full_name, timestamp_key)] = (
+                    full_name,
+                    snapshot_timestamp,
+                )
+
+    return sorted(
+        requests_by_key.values(),
+        key=lambda entry: (entry[0].lower(), entry[1]),
+    )
+
+
+def refresh_star_history_cache(
+    star_history_cache: StarHistoryCache,
+    current_snapshot: Mapping[str, Any],
+    period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    *,
+    repositories: Sequence[str] = (),
+    client: GitHubStarHistoryClient | None = None,
+) -> bool:
+    """Refresh missing GitHub stargazer baselines into the cache."""
+    missing_requests = collect_missing_star_history_requests(
+        current_snapshot,
+        period_snapshots,
+        star_history_cache,
+        repositories=repositories,
+    )
+    if not missing_requests:
+        print("No missing GitHub star-history baselines to refresh.")
+        return False
+
+    client = client or GitHubStarHistoryClient(
+        token=os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+    )
+    changed = False
+
+    for index, (full_name, timestamp) in enumerate(missing_requests, start=1):
+        timestamp_key = timestamp_cache_key(timestamp)
+        print(
+            "Reconstituting GitHub star baseline "
+            f"{index}/{len(missing_requests)}: {full_name} at {timestamp_key}"
+        )
+        stargazer_count = client.count_stargazers_at(full_name, timestamp)
+        if stargazer_count is None:
+            print(
+                "Skipped GitHub star baseline outside accessible pagination: "
+                f"{full_name} at {timestamp_key}"
+            )
+            continue
+
+        cache_stargazer_count(
+            star_history_cache,
+            full_name,
+            timestamp,
+            stargazer_count,
+        )
+        changed = True
+
+    return changed
+
+
 def validate_category_tags(snapshot_categories: Mapping[str, Any]) -> None:
     """Fail fast if snapshot category tags drift from the static configuration."""
     configured_tags = [category.tag for category in CATEGORIES]
@@ -529,6 +998,7 @@ def category_period_performance(
     items: Sequence[Mapping[str, Any]],
     period_snapshots: Mapping[str, Mapping[str, Any] | None],
     tag: str,
+    star_history_baselines: StarHistoryBaselines | None = None,
 ) -> dict[str, dict[RepositoryKey, dict[str, int | None]]]:
     """Rank tracked category repositories by stars gained for every period."""
     performance: dict[str, dict[RepositoryKey, dict[str, int | None]]] = {}
@@ -544,6 +1014,11 @@ def category_period_performance(
         performance[period_id] = build_period_performance(
             items,
             previous_items if isinstance(previous_items, list) else None,
+            (
+                star_history_baselines.get(period_id)
+                if star_history_baselines is not None
+                else None
+            ),
         )
 
     return performance
@@ -569,12 +1044,18 @@ def global_period_performance(
     items: Sequence[Mapping[str, Any]],
     current_snapshot: Mapping[str, Any],
     period_snapshots: Mapping[str, Mapping[str, Any] | None],
+    star_history_baselines: StarHistoryBaselines | None = None,
 ) -> dict[str, dict[RepositoryKey, dict[str, int | None]]]:
     """Rank tracked global repositories by stars gained for every period."""
     performance = {
         period_id: build_period_performance(
             items,
             snapshot["global"]["items"] if snapshot is not None else None,
+            (
+                star_history_baselines.get(period_id)
+                if star_history_baselines is not None
+                else None
+            ),
         )
         for period_id, snapshot in period_snapshots.items()
     }
@@ -645,6 +1126,7 @@ def build_site_payload(
     generated_at: str | None = None,
     previous_snapshot: Mapping[str, Any] | None = None,
     period_snapshots: Mapping[str, Mapping[str, Any] | None] | None = None,
+    star_history_baselines: StarHistoryBaselines | None = None,
 ) -> dict[str, Any]:
     """Build the site payload by combining raw snapshot data and static metadata."""
     snapshot_categories = snapshot["categories"]
@@ -668,6 +1150,7 @@ def build_site_payload(
         global_catalog,
         snapshot,
         selected_period_snapshots,
+        star_history_baselines,
     )
 
     global_items = [
@@ -693,6 +1176,7 @@ def build_site_payload(
             category_items,
             selected_period_snapshots,
             category.tag,
+            star_history_baselines,
         )
         categories.append(
             {
@@ -776,18 +1260,38 @@ def export_site_data(
     *,
     generated_at: str | None = None,
     history_dir: Path = HISTORY_DIR,
+    star_history_cache_path: Path = DEFAULT_STAR_HISTORY_CACHE_PATH,
+    refresh_github_star_history: bool = False,
+    star_history_repositories: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Read the snapshot, build the consolidated payload, and write it to disk."""
     snapshot = load_snapshot(input_path)
     history_snapshots = load_history_snapshots(snapshot, history_dir=history_dir)
     previous_snapshot = history_snapshots[-1][1] if history_snapshots else None
     period_snapshots = build_period_snapshots(snapshot, history_snapshots)
+    star_history_cache = load_star_history_cache(star_history_cache_path)
+
+    if refresh_github_star_history:
+        cache_changed = refresh_star_history_cache(
+            star_history_cache,
+            snapshot,
+            period_snapshots,
+            repositories=star_history_repositories,
+        )
+        if cache_changed:
+            write_star_history_cache(star_history_cache_path, star_history_cache)
+
+    star_history_baselines = star_history_baselines_from_cache(
+        period_snapshots,
+        star_history_cache,
+    )
     payload = build_site_payload(
         snapshot,
         input_path=input_path,
         generated_at=generated_at,
         previous_snapshot=previous_snapshot,
         period_snapshots=period_snapshots,
+        star_history_baselines=star_history_baselines,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -804,6 +1308,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         input_path=args.input_path,
         output_path=args.output_path,
         history_dir=args.history_dir,
+        star_history_cache_path=args.star_history_cache_path,
+        refresh_github_star_history=args.refresh_github_star_history,
+        star_history_repositories=args.star_history_repository,
     )
 
 
